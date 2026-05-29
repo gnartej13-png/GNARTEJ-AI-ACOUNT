@@ -8,13 +8,39 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         
-        /* Adaptado para el iframe de Google Sites (sin position: fixed absoluto en body) */
+        /* Adaptado para el iframe de Google Sites */
         html, body { 
             background-color: #121212; 
             color: #ffffff; 
             height: 100vh; 
             width: 100%; 
             overflow: hidden; 
+        }
+        
+        /* PANTALLA DE CARGA PARA RENDER */
+        #loading-screen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: #121212;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        .spinner {
+            width: 50px; height: 50px;
+            border: 5px solid #1a1a1a;
+            border-top: 5px solid #00ff99;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
         
         .app-container { display: flex; width: 100%; height: 100vh; overflow: hidden; }
@@ -52,7 +78,7 @@
         .btn-delete-chat:hover { color: #ff3333; background-color: rgba(255, 51, 51, 0.1); }
         .sidebar-login-prompt { padding: 20px; text-align: center; display: flex; flex-direction: column; gap: 12px; justify-content: center; height: 100%; color: #aaa; font-size: 13px; }
         
-        /* Modales ajustados para no depender del contenedor superior */
+        /* Modales */
         .modal-screen { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(18, 18, 18, 0.98); z-index: 999; padding: 15px; flex-direction: column; align-items: center; justify-content: center; }
         .account-card { background-color: #1e1e1e; border: 1px solid #333; border-radius: 12px; width: 100%; max-width: 420px; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
         .login-box-inside { background: #121212; padding: 15px; border-radius: 8px; border: 1px solid #333; }
@@ -68,7 +94,7 @@
         @media (max-width: 768px) { .sidebar-right { display: none; } }
 
         /* Modal Alerta */
-        .modal-alerta-borrar-oculto {
+        .modal-alerta-oculto {
             display: none;
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -91,6 +117,11 @@
     </style>
 </head>
 <body>
+
+    <div id="loading-screen">
+        <div class="spinner"></div>
+        <h2 style="color: #00ff99; font-size: 18px; font-weight: 500; text-align: center; padding: 0 20px;" id="loading-text">Conectando con GNARTEJ API... Despertando servidor (esto puede tardar hasta 1 minuto)</h2>
+    </div>
 
     <div id="account-screen" class="modal-screen">
         <div class="account-card">
@@ -164,7 +195,7 @@
         let usuarioNube = null; 
         let chatActualId = null;
         let idChatSeleccionadoParaBorrar = null;
-        let estaPensando = false; // Candado para evitar envíos múltiples
+        let estaPensando = false; 
 
         function guardarDato(key, valor) { try { localStorage.setItem(key, valor); } catch(e) { window.name = valor; } }
         function leerDato(key) { try { return localStorage.getItem(key); } catch(e) { return window.name || null; } }
@@ -176,7 +207,10 @@
             return texto.replace(regexUrl, url => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`);
         }
 
-        window.onload = function() {
+        // CONTROL DE PANTALLA DE CARGA AL INICIAR
+        window.onload = async function() {
+            await comprobarServidorRender();
+
             let sesionGuardada = leerDato("gnartej_user_session");
             let ultimoChatId = leerDato("gnartej_chat_actual_id");
             if (sesionGuardada) {
@@ -189,6 +223,33 @@
                 } catch(e) {}
             }
             activarInterfazDesconectado();
+        }
+
+        // Bucle que consulta a Render hasta que responda
+        async function comprobarServidorRender() {
+            const loadingText = document.getElementById("loading-text");
+            let intentos = 0;
+            while(true) {
+                try {
+                    // Consultamos la raíz de tu API para verificar que responda
+                    const res = await fetch(`${RENDER_BACKEND_URL}/`);
+                    if(res.ok || res.status === 404 || res.status === 200) {
+                        // El servidor está despierto y respondiendo
+                        break; 
+                    }
+                } catch(e) {
+                    intentos++;
+                    if(intentos > 5) {
+                        loadingText.textContent = "El servidor está tardando más de lo habitual... sigue esperando, ya casi despierta.";
+                    }
+                }
+                // Espera 3 segundos antes de volver a intentar
+                await new Promise(resolve => setTimeout(resolve, 3000));
+            }
+            // Ocultar pantalla de carga suavemente
+            const loader = document.getElementById("loading-screen");
+            loader.style.opacity = "0";
+            setTimeout(() => { loader.style.display = "none"; }, 500);
         }
 
         function activarInterfazDesconectado() {
@@ -358,7 +419,6 @@
             const btnEnviar = document.getElementById("send-btn");
             const texto = input.value.trim();
             
-            // Si está vacío, no hay usuario o ya está procesando una respuesta, frena el envío
             if (!texto || !usuarioNube || estaPensando) return;
             
             estaPensando = true;
@@ -369,15 +429,20 @@
 
             input.value = "";
             const chatBox = document.getElementById("chat-box");
-            let estabaAbajoDelTodo = (chatBox.scrollHeight - chatBox.scrollTop <= chatBox.clientHeight + 90);
 
-            const userDiv = document.createElement("div"); userDiv.className = "message user-message"; userDiv.textContent = texto;
+            // TU MENSAJE: Forzamos a bajar el scroll para ver lo que escribes
+            const userDiv = document.createElement("div"); 
+            userDiv.className = "message user-message"; 
+            userDiv.textContent = texto;
             chatBox.appendChild(userDiv); 
-            if (estabaAbajoDelTodo) { chatBox.scrollTop = chatBox.scrollHeight; }
+            chatBox.scrollTop = chatBox.scrollHeight;
 
-            const aiDiv = document.createElement("div"); aiDiv.className = "message ai-message"; aiDiv.textContent = "GNARTEJ AI pensando...";
+            // MENSAJE PENSANDO: Se añade debajo
+            const aiDiv = document.createElement("div"); 
+            aiDiv.className = "message ai-message"; 
+            aiDiv.textContent = "GNARTEJ AI pensando...";
             chatBox.appendChild(aiDiv); 
-            if (estabaAbajoDelTodo) { chatBox.scrollTop = chatBox.scrollHeight; }
+            chatBox.scrollTop = chatBox.scrollHeight;
 
             try {
                 const res = await fetch(`${RENDER_BACKEND_URL}/api/chat/${chatActualId}`, {
@@ -387,17 +452,13 @@
                 });
                 const data = await res.json();
                 
-                estabaAbajoDelTodo = (chatBox.scrollHeight - chatBox.scrollTop <= chatBox.clientHeight + 90);
+                // RESPUESTA DE LA IA: Se inyecta sin mover el scroll del sitio actual
                 aiDiv.innerHTML = formatearTextoConEnlaces(data.reply);
                 
-                if (estabaAbajoDelTodo) {
-                    setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 30);
-                }
                 await cargarHistorialNube();
             } catch(e) { 
                 aiDiv.textContent = "Error de enlace con GNARTEJ AI."; 
             } finally {
-                // Esto se ejecuta SIEMPRE (falle o funcione la petición), liberando la interfaz
                 estaPensando = false;
                 input.disabled = false;
                 btnEnviar.disabled = false;
@@ -452,10 +513,9 @@
         function abrirPantallaHistorial() { document.getElementById("history-screen").style.display = "flex"; }
         function cerrarPantallaHistorial() { document.getElementById("history-screen").style.display = "none"; }
         
-        // Ejecuta la función de forma segura controlando el evento 'Enter'
         document.getElementById("user-input").addEventListener("keypress", function(e) { 
             if (e.key === 'Enter') {
-                e.preventDefault(); // Evita saltos de línea raros en inputs de texto
+                e.preventDefault(); 
                 enviarMensaje(); 
             }
         });
