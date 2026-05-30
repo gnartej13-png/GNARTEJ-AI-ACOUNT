@@ -134,9 +134,8 @@
                 </div>
             </div>
             <div id="zona-logout" style="display: none;" class="zona-usuario-activa">
-                <h2 style="color: #00ff99; font-size: 22px; margin-bottom: 5px;" id="menu-user-title">Usuario</h2>
+                <h2 style="color: #00ff99; font-size: 22px; margin-bottom: 15px;" id="menu-user-title">Usuario</h2>
                 <button class="btn-logout-panel" onclick="cerrarSesionNube()">🔴 Cerrar Sesión</button>
-                <button class="btn-logout-panel" style="background-color: #bc1919; margin-top: 8px;" onclick="abrirConfirmacionBorrarCuenta()">⚠️ Eliminar Cuenta</button>
             </div>
             <button class="btn-volver" onclick="cerrarPantallaCuenta()">Cerrar Ventana</button>
         </div>
@@ -185,17 +184,6 @@
         </div>
     </div>
 
-    <div id="modal-alerta-borrar-cuenta" class="modal-alerta-oculto">
-        <div class="alerta-card" style="border-color: #ff3333;">
-            <h3>¿ELIMINAR TU CUENTA?</h3>
-            <p>Esta acción es irreversible. Se borrará tu usuario y todo tu historial de chats de forma permanente de la base de datos.</p>
-            <div class="alerta-botones">
-                <button class="btn-alerta-cancelar" onclick="cancelarBorradoCuenta()">Cancelar</button>
-                <button class="btn-alerta-eliminar" onclick="ejecutarBorradoCuenta()">Sí, borrar mi cuenta</button>
-            </div>
-        </div>
-    </div>
-
     <script>
         const RENDER_BACKEND_URL = "https://gnartej-api-production.up.railway.app".replace(/\/$/, "");
         let usuarioNube = null; 
@@ -214,7 +202,7 @@
         function formatearTextoConEnlaces(texto) {
             if (!texto) return "";
             const regexUrl = /(https?:\/\/[^\s]+)/g;
-            return text.replace(regexUrl, url => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`);
+            return texto.replace(regexUrl, url => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`);
         }
 
         window.onload = async function() {
@@ -566,24 +554,6 @@
             }
         });
 
-        async function ejecutarBorradoCuenta() {
-            if (!usuarioNube) return;
-            try {
-                const res = await fetch(`${RENDER_BACKEND_URL}/api/auth/users/${usuarioNube._id}`, { 
-                    method: 'DELETE' 
-                });
-                if (res.ok) {
-                    alert("Tu cuenta y tus chats han sido eliminados permanentemente.");
-                    document.getElementById("modal-alerta-borrar-cuenta").style.display = "none";
-                    activarInterfazDesconectado();
-                } else {
-                    alert("No se pudo eliminar la cuenta.");
-                }
-            } catch(e) {
-                alert("Error de conexión.");
-            }
-        }
-
         function alternarVisibilidadPassword() {
             const input = document.getElementById("password-input");
             input.type = input.type === "password" ? "text" : "password";
@@ -594,14 +564,6 @@
         function abrirPantallaHistorial() { document.getElementById("history-screen").style.display = "flex"; }
         function cerrarPantallaHistorial() { document.getElementById("history-screen").style.display = "none"; }
         
-        function abrirConfirmacionBorrarCuenta() { 
-            cerrarPantallaCuenta(); 
-            document.getElementById("modal-alerta-borrar-cuenta").style.display = "flex"; 
-        }
-        function cancelarBorradoCuenta() { 
-            document.getElementById("modal-alerta-borrar-cuenta").style.display = "none"; 
-            abrirPantallaCuenta();
-        }
         function cerrarSesionNube() { 
             activarInterfazDesconectado(); 
             cerrarPantallaCuenta(); 
