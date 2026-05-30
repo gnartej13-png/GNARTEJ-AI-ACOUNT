@@ -37,7 +37,7 @@
             animation: spin 1s linear infinite;
         }
         @keyframes spin {
-            0 { transform: rotate(0deg); }
+            0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
         
@@ -197,15 +197,15 @@
     </div>
 
     <script>
-       const RENDER_BACKEND_URL = "https://gnartej-api-production.up.railway.app".replace(/\/$/, "");
+        const RENDER_BACKEND_URL = "https://gnartej-api-production.up.railway.app".replace(/\/$/, "");
         let usuarioNube = null; 
         let chatActualId = null;
         let estaPensando = false; 
+        let chatParaBorrarId = null; 
 
         const modal = document.getElementById('modal-confirmacion');
         const btnCancelar = document.getElementById('btn-cancelar-borrar');
         const btnConfirmar = document.getElementById('btn-confirmar-borrar');
-        let chatParaBorrarId = null; 
 
         function guardarDato(key, valor) { try { localStorage.setItem(key, valor); } catch(e) { window.name = valor; } }
         function leerDato(key) { try { return localStorage.getItem(key); } catch(e) { return window.name || null; } }
@@ -214,7 +214,7 @@
         function formatearTextoConEnlaces(texto) {
             if (!texto) return "";
             const regexUrl = /(https?:\/\/[^\s]+)/g;
-            return texto.replace(regexUrl, url => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`);
+            return text.replace(regexUrl, url => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`);
         }
 
         window.onload = async function() {
@@ -249,7 +249,7 @@
                 } catch(e) {
                     intentos++;
                     if(intentos >= 1) {
-                        loadingText.textContent = "El servidor de Render estaba dormido. Despertándolo... (Puede tardar hasta 1 minuto)";
+                        loadingText.textContent = "El servidor de Railway se está iniciando... (Puede tardar unos segundos)";
                     }
                 }
                 await new Promise(resolve => setTimeout(resolve, 3000));
@@ -276,7 +276,8 @@
             document.getElementById("zona-logout").style.display = "none";
             document.getElementById("chat-box").innerHTML = `<div class="message ai-message">¡Hola! Inicia sesión pulsando arriba en <strong>"🔒 Conectar Cuenta"</strong>.</div>`;
             document.getElementById("lista-chats").innerHTML = `<div class="sidebar-login-prompt"><p>Inicia sesión para ver tus conversaciones.</p></div>`;
-            document.getElementById("lista-chats-modal").innerHTML = "";
+            const contenedorModal = document.getElementById("lista-chats-modal");
+            if(contenedorModal) contenedorModal.innerHTML = "";
         }
 
         function activarInterfazNube() {
@@ -520,7 +521,7 @@
                 await cargarHistorialNube();
             } catch(e) { 
                 console.error(e);
-                aiDiv.textContent = "Error al conectar con la IA de Mistral. Inténtalo de nuevo."; 
+                aiDiv.textContent = "Error al conectar con la IA. Inténtalo de nuevo."; 
             } finally { 
                 estaPensando = false; 
                 input.disabled = false;
@@ -588,17 +589,23 @@
             input.type = input.type === "password" ? "text" : "password";
         }
 
-        function abrirConfirmacionBorrarCuenta() { cerrarPantallaCuenta(); document.getElementById("modal-alerta-borrar-cuenta").style.display = "flex"; }
-        function cancelarBorradoCuenta() { document.getElementById("modal-alerta-borrar-cuenta").style.display = "none"; abrirPantallaCuenta(); }
-        function cerrarSesionNube() { activarInterfazDesconectado(); cerrarPantallaCuenta(); }
         function abrirPantallaCuenta() { document.getElementById("account-screen").style.display = "flex"; }
         function cerrarPantallaCuenta() { document.getElementById("account-screen").style.display = "none"; }
         function abrirPantallaHistorial() { document.getElementById("history-screen").style.display = "flex"; }
         function cerrarPantallaHistorial() { document.getElementById("history-screen").style.display = "none"; }
         
-        document.getElementById("user-input").addEventListener("keypress", function(e) { 
-            if (e.key === 'Enter' && !this.disabled) enviarMensaje(); 
-        });
+        function abrirConfirmacionBorrarCuenta() { 
+            cerrarPantallaCuenta(); 
+            document.getElementById("modal-alerta-borrar-cuenta").style.display = "flex"; 
+        }
+        function cancelarBorradoCuenta() { 
+            document.getElementById("modal-alerta-borrar-cuenta").style.display = "none"; 
+            abrirPantallaCuenta();
+        }
+        function cerrarSesionNube() { 
+            activarInterfazDesconectado(); 
+            cerrarPantallaCuenta(); 
+        }
     </script>
 </body>
 </html>
