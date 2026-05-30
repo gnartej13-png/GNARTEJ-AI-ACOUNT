@@ -206,6 +206,13 @@
         }
 
         window.onload = async function() {
+            // Escuchar la tecla enter en el input de texto
+            document.getElementById("user-input").addEventListener("keypress", function(e) {
+                if (e.key === "Enter" && !this.disabled) {
+                    enviarMensaje();
+                }
+            });
+
             await comprobarServidorRender();
 
             let sesionGuardada = leerDato("gnartej_user_session");
