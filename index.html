@@ -20,6 +20,8 @@
             --verde-fosforito: #00ff99;
             --ai-msg-bg: #1a1a1f;
             --ai-msg-texto: #e4e4e7;
+            --bg-modal-overlay: rgba(15, 15, 17, 0.96);
+            --bg-modal-alerta: rgba(9, 9, 11, 0.9);
         }
 
         /* Cuando se activa el modo claro */
@@ -36,6 +38,8 @@
             --borde-fuerte: #d4d4d8;
             --ai-msg-bg: #f4f4f5;
             --ai-msg-texto: #09090b;
+            --bg-modal-overlay: rgba(244, 244, 245, 0.96);
+            --bg-modal-alerta: rgba(228, 228, 231, 0.9);
         }
 
         * { 
@@ -132,7 +136,6 @@
             font-weight: 600; 
             cursor: pointer; 
             border: 1px solid var(--borde-fuerte); 
-            transition: all 0.2s ease; 
             display: flex;
             align-items: center;
             gap: 6px;
@@ -143,14 +146,15 @@
             border-color: var(--verde-fosforito);
         }
 
+        /* Corrección del botón historial para que use los fondos limpios del tema */
         .btn-historial-header { 
-            background-color: transparent; 
+            background-color: var(--bg-principal); 
             color: var(--verde-fosforito); 
-            border: 1px solid rgba(0, 255, 153, 0.3); 
+            border: 1px solid var(--borde-fuerte); 
         }
 
         .btn-historial-header:hover { 
-            background-color: rgba(0, 255, 153, 0.1); 
+            background-color: var(--bg-item-hover); 
             border-color: var(--verde-fosforito);
         }
 
@@ -184,7 +188,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* El mensaje de usuario mantiene sus letras negras como querías */
         .user-message { 
             background-color: var(--verde-fosforito); 
             color: #000000 !important; 
@@ -361,12 +364,13 @@
             font-size: 14px; 
         }
 
+        /* El fondo ahora usa la variable reactiva al tema claro/oscuro */
         .modal-screen { 
             display: none; 
             position: absolute; 
             top: 0; left: 0; 
             width: 100%; height: 100%; 
-            background-color: rgba(15, 15, 17, 0.96); 
+            background-color: var(--bg-modal-overlay); 
             z-index: 999; 
             padding: 20px; 
             flex-direction: column; 
@@ -385,7 +389,7 @@
             display: flex; 
             flex-direction: column; 
             gap: 20px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
 
         .login-box-inside { 
@@ -486,11 +490,12 @@
             .sidebar-right { display: none; } 
         }
 
+        /* El fondo de confirmación de borrado también cambia con el tema */
         .modal-alerta-oculto {
             display: none;
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(9, 9, 11, 0.9);
+            background-color: var(--bg-modal-alerta);
             z-index: 2000;
             justify-content: center; align-items: center;
             padding: 20px;
@@ -528,9 +533,9 @@
         }
 
         .btn-alerta-cancelar { 
-            background-color: #22222a; 
-            color: #fff; 
-            border: 1px solid #2e2e38; 
+            background-color: var(--bg-principal); 
+            color: var(--texto-principal); 
+            border: 1px solid var(--borde-fuerte); 
             padding: 12px 20px; 
             border-radius: 8px; 
             cursor: pointer; 
@@ -576,7 +581,6 @@
             z-index: 10 !important; 
         }
 
-        /* --- CÁPSULA DE 3 PARTES EXCLUSIVA PARA EL TEMA --- */
         .settings-group { display: flex; flex-direction: column; gap: 10px; margin-top: 5px; }
         .settings-group h4 { font-size: 14px; color: var(--texto-principal); font-weight: 600; }
         
@@ -602,7 +606,6 @@
             color: var(--texto-secundario); 
         }
         
-        /* Tema Activo: Fondo verde fosforito y letras negras perfectas */
         .capsule-btn.active { 
             background-color: var(--verde-fosforito) !important; 
             color: #000000 !important; 
@@ -635,7 +638,7 @@
 
         <div id="zona-logout" style="display: none;" class="zona-usuario-activa">
             <h2 style="color: var(--verde-fosforito); font-size: 22px; margin-bottom: 16px; font-weight: 600;" id="menu-user-title">Usuario</h2>
-            <button class="btn-logout-panel" onclick="cerrarSesionNube()">🔴 Cerrar Sesión</button>
+            <button class="btn-logout-panel" onclick="cerrarSesionNube()">Cerrar Sesión</button>
         </div>
         <button class="btn-volver" onclick="cerrarPantallaCuenta()">Cerrar Ventana</button>
     </div>
@@ -711,7 +714,7 @@
     let chatActualId = null;
     let estaPensando = false;
     let chatParaBorrarId = null;
-    let temaSeleccionado = "oscuro"; // Control interno del tema actual
+    let temaSeleccionado = "oscuro";
 
     const modal = document.getElementById('modal-confirmacion');
     const btnCancelar = document.getElementById('btn-cancelar-borrar');
@@ -734,7 +737,6 @@
             }
         });
 
-        // Recuperar tema preferido de la caché si existe
         const temaGuardado = leerDato("gnartej_setting_tema");
         if (temaGuardado) definirTemaSistema(temaGuardado);
 
@@ -753,13 +755,12 @@
         }
         activarInterfazDesconectado();
 
-        // Listener en tiempo real para cambios de tema en el dispositivo
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
             if (temaSeleccionado === "dispositivo") sincronizarConDispositivo();
         });
     }
 
-    /* --- LÓGICA DE CONTROLADORES PARA EL CAMBIO DE TEMAS --- */
+    /* --- CORRECCIÓN DE LA LOGICA DE TRANSMISIÓN DE TEMAS --- */
     function definirTemaSistema(tema) {
         temaSeleccionado = tema;
         guardarDato("gnartej_setting_tema", tema);
@@ -833,8 +834,8 @@
 
     function activarInterfazNube() {
         document.getElementById("status-badge").textContent = "👤 " + (usuarioNube.name || usuarioNube.username);
-        document.getElementById("status-badge").style.color = "#00ff99";
-        document.getElementById("status-badge").style.borderColor = "#00ff99";
+        document.getElementById("status-badge").style.color = "var(--verde-fosforito)";
+        document.getElementById("status-badge").style.borderColor = "var(--verde-fosforito)";
         document.getElementById("btn-historial-top").style.display = "block";
         document.getElementById("menu-user-title").textContent = "👤 " + (usuarioNube.name || usuarioNube.username);
         document.getElementById("user-input").disabled = false;
