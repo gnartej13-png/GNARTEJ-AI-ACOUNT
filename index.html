@@ -682,13 +682,13 @@
                 if(!res.ok) throw new Error("No se pudo obtener el historial");
                 listaChatsGlobal = await res.json();
                 
-                renderizarListaLateralHistorial();
+                renderListaLateralHistorial();
 
-                // Si hay chats y no hay ninguno seleccionado, abrimos el más reciente de forma automática
+                // Si hay chats y no hay ninguno activo, abrimos el más reciente automáticamente
                 if(listaChatsGlobal.length > 0 && !idChatActivo) {
                     seleccionarConversacionEspecifica(listaChatsGlobal[0]._id);
                 } else if(listaChatsGlobal.length === 0) {
-                    // Si la cuenta está completamente limpia, forzamos la creación del primer chat
+                    // Si la cuenta está limpia, creamos el primer chat de inmediato
                     await crearNuevaConversacion();
                 }
             } catch (err) {
@@ -696,9 +696,11 @@
             }
         }
 
-        function renderizarListaLateralHistorial() {
+        function renderListaLateralHistorial() {
             const contenedor = document.getElementById('sidebar-dinamico-root');
-            contenedor.className = "chats-list"; // Cambia el contenedor de prompt a lista limpia
+            if (!contenedor) return;
+            
+            contenedor.className = "chats-list"; 
             contenedor.innerHTML = "";
 
             if(listaChatsGlobal.length === 0) {
@@ -733,33 +735,49 @@
                 idChatActivo = nuevoChat._id;
                 await recargarHistorialChatsServidor();
             } catch (err) {
-                alert(err.message);
+                console.error("Error al crear chat:", err);
             }
         }
 
         function seleccionarConversacionEspecifica(chatId) {
             idChatActivo = chatId;
             
-            // Actualizar la clase activa visualmente en la barra lateral
+            // Actualizar el estado activo visual en tu barra lateral original
             const items = document.querySelectorAll('.chat-item');
             items.forEach(el => el.classList.remove('active'));
             
+            // Buscar el chat seleccionado en la lista en memoria
             const chatSeleccionado = listaChatsGlobal.find(c => c._id === chatId);
-            if(!chatSeleccionado) return;
+            
+            // Si el elemento visual está en la lista, le añade la clase activa
+            const itemsLaterales = document.querySelectorAll('.chat-item');
+            listaChatsGlobal.forEach((c, index) => {
+                if(c._id === chatId && itemsLaterales[index]) {
+                    itemsLaterales[index].classList.add('active');
+                }
+            });
 
             const box = document.getElementById('chat-box-messages');
+            if (!box) return;
             box.innerHTML = "";
 
-            if(!chatSeleccionado.mensajes || chatSeleccionado.mensajes.length === 0) {
+            if(!chatSeleccionado || !chatSeleccionado.mensajes || chatSeleccionado.mensajes.length === 0) {
                 box.innerHTML = `<div class="message ai-message">Has iniciado una nueva conversación. ¿De qué te gustaría hablar con GNARTEJ AI hoy?</div>`;
             } else {
                 chatSeleccionado.mensajes.forEach(msg => {
+                    // Ignorar las instrucciones del sistema para que no se pinten en la interfaz visual
+                    if (msg.role === 'system') return;
+                    
                     const div = document.createElement('div');
                     div.className = `message ${msg.role === 'user' ? 'user-message' : 'ai-message'}`;
-                    div.innerText = msg.content;
+                    
+                    // CORRECCIÓN ULTRA-COMPATIBLE: Lee tanto si se guardó como content o como texto
+                    div.innerText = msg.content || msg.texto || ""; 
                     box.appendChild(div);
                 });
             }
+            box.scrollTop = box.scrollHeight;
+        }
             
             // Re-renderizar la lista para actualizar el foco visual
             renderizarListaLateralHistorial();
