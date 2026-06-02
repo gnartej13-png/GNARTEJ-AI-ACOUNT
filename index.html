@@ -1,383 +1,132 @@
 <!DOCTYPE html>
-
 <html lang="es">
-
 <head>
-
-    <meta charset="UTF-8">
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>GNARTEJ AI</title>
-
-    <style>
-
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-
-       
-
-        html, body {
-
-            background-color: #121212;
-
-            color: #ffffff;
-
-            height: 100vh;
-
-            width: 100%;
-
-            overflow: hidden;
-
-        }
-
-       
-
-        #loading-screen {
-
-            position: fixed;
-
-            top: 0; left: 0;
-
-            width: 100%; height: 100%;
-
-            background-color: #121212;
-
-            z-index: 9999;
-
-            display: flex;
-
-            flex-direction: column;
-
-            justify-content: center;
-
-            align-items: center;
-
-            gap: 20px;
-
-            transition: opacity 0.5s ease, transform 0.5s ease;
-
-        }
-
-        .spinner {
-
-            width: 50px; height: 50px;
-
-            border: 5px solid #1a1a1a;
-
-            border-top: 5px solid #00ff99;
-
-            border-radius: 50%;
-
-            animation: spin 1s linear infinite;
-
-        }
-
-        @keyframes spin {
-
-            0% { transform: rotate(0deg); }
-
-            100% { transform: rotate(360deg); }
-
-        }
-
-       
-
-        .app-container { display: flex; width: 100%; height: 100vh; overflow: hidden; }
-
-        .chat-area { flex: 1; display: flex; flex-direction: column; height: 100%; background-color: #1a1a1a; overflow: hidden; position: relative; }
-
-        .chat-header { background-color: #242424; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; height: 60px; flex-shrink: 0; }
-
-        .chat-header h2 { color: #00ff99; font-size: 18px; }
-
-        .header-buttons-container { display: flex; gap: 8px; align-items: center; }
-
-        .chat-status-badge { background-color: #333; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; border: 1px solid #444; transition: all 0.2s ease; }
-
-        .chat-status-badge:hover { background-color: #444; }
-
-        .btn-historial-header { background-color: #121212; color: #00ff99; border: 1px solid #00ff99; }
-
-        .btn-historial-header:hover { background-color: #00ff99; color: #121212; }
-
-       
-
-        .chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 100%; -webkit-overflow-scrolling: touch; }
-
-        .message { padding: 12px 16px; border-radius: 12px; max-width: 85%; word-wrap: break-word; overflow-wrap: break-word; white-space: pre-wrap; line-height: 1.4; font-size: 15px; }
-
-        .user-message { background-color: #00ff99; color: #000000; align-self: flex-end; border-bottom-right-radius: 2px; }
-
-        .ai-message { background-color: #2d2d2d; color: #fff; align-self: flex-start; border-bottom-left-radius: 2px; }
-
-        .ai-message a { color: #00ff99; text-decoration: underline; font-weight: bold; }
-
-       
-
-        .chat-input-container { padding: 12px; background-color: #242424; display: flex; gap: 10px; border-top: 1px solid #333; width: 100%; flex-shrink: 0; }
-
-        .chat-input-container input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #444; background-color: #1a1a1a; color: white; font-size: 16px; outline: none; }
-
-        .chat-input-container input:focus { border-color: #00ff99; }
-
-        .chat-input-container button { background-color: #00ff99; color: black; border: none; padding: 0 18px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; }
-
-        .chat-input-container input:disabled, .chat-input-container button:disabled { opacity: 0.3; cursor: not-allowed; }
-
-       
-
-        .sidebar-right { width: 290px; background-color: #121212; border-left: 1px solid #333; display: flex; flex-direction: column; height: 100%; flex-shrink: 0; }
-
-        .sidebar-header { padding: 12px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-
-        .btn-nuevo-chat { width: 100%; padding: 10px; background-color: transparent; color: #00ff99; border: 1px dashed #00ff99; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; text-align: center; }
-
-        .btn-nuevo-chat:disabled { opacity: 0.2; cursor: not-allowed; }
-
-        .chats-list { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
-
-        .chat-item { padding: 12px; background-color: #1a1a1a; border-radius: 6px; cursor: pointer; font-size: 14px; border: 1px solid #2d2d2d; display: flex; justify-content: space-between; align-items: center; gap: 10px; transition: all 0.2s; }
-
-        .chat-item:hover, .chat-item.active { background-color: #2d2d2d; border-color: #00ff99; }
-
-        .chat-item-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
-
-        .btn-delete-chat { background: none; border: none; color: #888; cursor: pointer; font-size: 14px; padding: 2px 6px; border-radius: 4px; }
-
-        .btn-delete-chat:hover { color: #ff3333; background-color: rgba(255, 51, 51, 0.1); }
-
-        .sidebar-login-prompt { padding: 20px; text-align: center; display: flex; flex-direction: column; gap: 12px; justify-content: center; height: 100%; color: #aaa; font-size: 13px; }
-
-       
-
-        .modal-screen { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(18, 18, 18, 0.98); z-index: 999; padding: 15px; flex-direction: column; align-items: center; justify-content: center; }
-
-        .account-card { background-color: #1e1e1e; border: 1px solid #333; border-radius: 12px; width: 100%; max-width: 420px; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
-
-        .login-box-inside { background: #121212; padding: 15px; border-radius: 8px; border: 1px solid #333; }
-
-        .login-box-inside label { font-size: 13px; color: #bbb; display: block; margin-top: 6px; }
-
-        .login-box-inside input { width: 100%; padding: 10px; margin: 5px 0 10px 0; background: #1a1a1a; border: 1px solid #444; color: white; border-radius: 6px; font-size: 15px; outline: none; }
-
-        .login-box-inside input:focus { border-color: #00ff99; }
-
-        .login-box-inside button { width: 100%; padding: 12px; background: #00ff99; color: black; border: none; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 15px; }
-
-        .zona-usuario-activa { text-align: center; padding: 10px; }
-
-        .btn-logout-panel { width: 100%; padding: 12px; background-color: #ff3333; color: white; border: none; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 14px; margin-top: 10px; }
-
-        .btn-volver { align-self: center; background: none; border: 1px solid #444; color: #aaa; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; margin-top: 5px; }
-
-        .modal-chats-list { width: 100%; max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
-
-       
-
-        @media (max-width: 768px) { .sidebar-right { display: none; } }
-
-        .modal-alerta-oculto {
-
-            display: none;
-
-            position: absolute;
-
-            top: 0; left: 0; width: 100%; height: 100%;
-
-            background-color: rgba(0, 0, 0, 0.85);
-
-            z-index: 2000;
-
-            justify-content: center; align-items: center;
-
-            padding: 15px;
-
-        }
-
-        .alerta-card { background-color: #1e1e1e; border: 1px solid #ff3333; border-radius: 12px; width: 100%; max-width: 380px; padding: 22px; text-align: center; }
-
-        .alerta-card h3 { color: #ff3333; font-size: 19px; margin-bottom: 8px; }
-
-        .alerta-card p { color: #ccc; font-size: 14px; line-height: 1.4; margin-bottom: 20px; }
-
-        .alerta-botones { display: flex; gap: 12px; justify-content: center; }
-
-        .btn-alerta-cancelar { background-color: #333; color: #fff; border: 1px solid #554; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; }
-
-        .btn-alerta-eliminar { background-color: #ff3333; color: #fff; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; }
-
-        .password-container { position: relative; width: 100%; display: block; }
-
-        .password-container input { padding-right: 40px !important; width: 100%; }
-
-        .btn-toggle-password { position: absolute !important; right: 12px !important; top: 50% !important; transform: translateY(-50%) !important; background: transparent !important; border: none !important; color: #888 !important; cursor: pointer !important; font-size: 18px !important; padding: 0 !important; margin: 0 !important; width: auto !important; height: auto !important; z-index: 10 !important; }
-
-    </style>
-
-</head>
-
-<body>
-
-    <div id="loading-screen">
-
-        <div class="spinner"></div>
-
-        <h2 style="color: #00ff99; font-size: 18px; font-weight: 500; text-align: center; padding: 0 20px;" id="loading-text">Conectando con GNARTEJ API... Verificando estado</h2>
-
-    </div>
-
-    <div id="account-screen" class="modal-screen">
-
-        <div class="account-card">
-
-            <div id="zona-login-registro">
-
-                <h2 style="color: #00ff99; font-size: 20px; text-align: center; margin-bottom: 5px;">Vincular Cuenta</h2>
-
-                <p style="color: #aaa; font-size: 13px; text-align: center; margin-bottom: 15px;">Pon tu usuario y clave. Si no existes, nos encargamos de registrarte.</p>
-
-                <div class="login-box-inside">
-
-                    <label>Usuario:</label>
-
-                    <input type="text" id="username-input" placeholder="Tu usuario...">
-
-                    <label>Contraseña:</label>
-
-                    <div class="password-container">
-
-                        <input type="password" id="password-input" placeholder="Tu contraseña...">
-
-                        <button type="button" class="btn-toggle-password" onclick="alternarVisibilidadPassword()">🙈</button>
-
-                    </div>
-
-                    <button id="btn-login-action" onclick="conectarCuentaNube()">Autenticar Cuenta</button>
-
-                </div>
-
-            </div>
-
-            <div id="zona-logout" style="display: none;" class="zona-usuario-activa">
-
-                <h2 style="color: #00ff99; font-size: 22px; margin-bottom: 15px;" id="menu-user-title">Usuario</h2>
-
-                <button class="btn-logout-panel" onclick="cerrarSesionNube()">Cerrar Sesión</button>
-
-            </div>
-
-            <button class="btn-volver" onclick="cerrarPantallaCuenta()">Cerrar Ventana</button>
-
-        </div>
-
-    </div>
-
-    <div class="app-container">
-
-        <div class="chat-area">
-
-            <div class="chat-header">
-
-                <h2>GNARTEJ AI</h2>
-
-                <div class="header-buttons-container">
-
-                    <div class="chat-status-badge btn-historial-header" id="btn-historial-top" onclick="abrirPantallaHistorial()" style="display: none;">💬 Historial</div>
-
-                    <div class="chat-status-badge" id="status-badge" onclick="abrirPantallaCuenta()" style="color: #ff3333; border-color: #ff3333;">🔒 Conectar Cuenta</div>
-
-                </div>
-
-            </div>
-
-            <div class="chat-messages" id="chat-box"></div>
-
-            <div class="chat-input-container">
-
-                <input type="text" id="user-input" placeholder="Requiere cuenta activa..." disabled>
-
-                <button id="send-btn" onclick="enviarMensaje()" disabled>Enviar</button>
-
-            </div>
-
-        </div>
-
-        <div class="sidebar-right" id="sidebar-conversaciones">
-
-            <div class="sidebar-header">
-
-                <button class="btn-nuevo-chat" id="sidebar-newchat-btn" onclick="crearNuevoChat()" disabled>+ Nuevo Chat</button>
-
-            </div>
-
-            <div class="chats-list" id="lista-chats"></div>
-
-        </div>
-
-    </div>
-
-    <div id="history-screen" class="modal-screen">
-
-        <div class="account-card" style="max-width: 460px;">
-
-            <h2 style="color: #00ff99; font-size: 20px; text-align: center;">🗂️ Historial de Conversaciones</h2>
-
-            <button class="btn-nuevo-chat" id="modal-newchat-btn" onclick="crearNuevoChat(); cerrarPantallaHistorial();" style="margin-top: 5px;">+ Crear Nuevo Chat</button>
-
-            <div class="modal-chats-list" id="lista-chats-modal"></div>
-
-            <button class="btn-volver" onclick="cerrarPantallaHistorial()">Volver al Chat</button>
-
-        </div>
-
-    </div>
-
-    <div id="modal-confirmacion" class="modal-alerta-oculto">
-
-        <div class="alerta-card">
-
-            <h3>¿Estás completamente seguro?</h3>
-
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            background-color: var(--bg-chat);
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GNARTEJ AI</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --bg-principal: #121212;
+            --bg-chat: #111114;
+            --bg-cabecera: #16161a;
+            --texto-principal: #ffffff;
+            --texto-secundario: #9ca3af;
+            --borde: #252529;
+            --verde-fosforito: #00ff99;
+            --ai-msg-bg: #16161a;
+            --ai-msg-texto: #e5e7eb;
+            --bg-bloque-gris: #222227;
+            --bg-bloque-gris-hover: #2c2c33;
+            --bg-capsula: #000000;
+        }
+
+        body.light-theme {
+            --bg-principal: #f5f5f7;
+            --bg-chat: #ffffff;
+            --bg-cabecera: #ececed;
+            --texto-principal: #1c1c1e;
+            --texto-secundario: #636366;
+            --borde: #d1d1d6;
+            --ai-msg-bg: #e5e5ea;
+            --ai-msg-texto: #1c1c1e;
+            --bg-bloque-gris: #e5e5ea;
+            --bg-bloque-gris-hover: #d1d1d6;
+            --bg-capsula: #ececed;
+        }
+
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        }
+
+        html, body {
+            background-color: var(--bg-principal);
+            color: var(--texto-principal);
+            height: 100vh;
+            width: 100%;
             overflow: hidden;
             position: relative;
+            transition: background-color 0.3s, color 0.3s;
         }
 
-        /* CABECERA PREMIUM */
-        .chat-header {
-            background-color: var(--bg-cabecera);
-            padding: 20px 24px;
+        #loading-screen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: #121212;
+            z-index: 9999;
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
+            justify-content: center;
             align-items: center;
-            border-bottom: 1px solid var(--borde);
-            height: 70px;
-            flex-shrink: 0;
+            gap: 20px;
+            transition: opacity 0.5s ease;
         }
 
-        .chat-header h2 {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--verde-fosforito);
+        .spinner {
+            width: 50px; height: 50px;
+            border: 5px solid #1a1a1a;
+            border-top: 5px solid var(--verde-fosforito);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .app-container { 
+            display: flex; 
+            width: 100%; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
+
+        .chat-area { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            height: 100%; 
+            background-color: var(--bg-chat); 
+            overflow: hidden; 
+            position: relative; 
+        }
+
+        .chat-header { 
+            background-color: var(--bg-cabecera); 
+            padding: 10px 15px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 1px solid var(--borde); 
+            height: 65px; 
+            flex-shrink: 0; 
+        }
+
+        .chat-header h2 { 
+            color: var(--verde-fosforito); 
+            font-size: 18px; 
+            font-weight: bold;
         }
 
         .capsule-menu {
-            background-color: #000000;
+            background-color: var(--bg-capsula);
             border: 1px solid var(--borde);
             border-radius: 50px;
             padding: 4px;
             display: flex;
             gap: 4px;
+            align-items: center;
         }
 
         .capsule-btn {
             background: none;
             border: none;
-            padding: 8px 16px;
+            padding: 8px 14px;
             border-radius: 50px;
             color: var(--texto-secundario);
             font-size: 13px;
@@ -386,7 +135,12 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
+        }
+
+        .capsule-btn:hover {
+            color: var(--texto-principal);
+            background-color: var(--bg-bloque-gris-hover);
         }
 
         .capsule-btn.active {
@@ -394,234 +148,239 @@
             color: #000000 !important;
         }
 
-        /* TRES BLOQUES DE TEXTO GRIS (AJUSTES DE TEMA) */
-        .theme-selector-container {
-            display: flex;
-            width: 100%;
-            margin-top: 10px;
-            border-radius: 50px;
-            overflow: hidden;
-            background-color: var(--bg-bloque-gris);
-            padding: 2px;
+        .chat-messages { 
+            flex: 1; 
+            padding: 15px; 
+            overflow-y: auto; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 12px; 
+            width: 100%; 
+            background-color: var(--bg-chat);
         }
 
-        .theme-block {
-            flex: 1;
-            background: transparent;
-            color: var(--texto-principal);
-            border: none;
-            padding: 12px;
-            font-size: 13px;
-            font-weight: 700;
-            text-align: center;
-            cursor: pointer;
-            position: relative;
-            transition: background-color 0.2s;
+        .message { 
+            padding: 12px 16px; 
+            border-radius: 14px; 
+            max-width: 85%; 
+            word-wrap: break-word; 
+            overflow-wrap: break-word; 
+            white-space: pre-wrap; 
+            line-height: 1.4; 
+            font-size: 15px; 
         }
 
-        .theme-block:hover {
-            background-color: var(--bg-bloque-gris-hover);
+        .user-message { 
+            background-color: var(--verde-fosforito); 
+            color: #000000; 
+            align-self: flex-end; 
+            border-bottom-right-radius: 2px; 
         }
 
-        /* Semicírculos perfectos en los extremos solicitados */
-        .theme-block:first-child {
-            border-top-left-radius: 50px;
-            border-bottom-left-radius: 50px;
-        }
-
-        .theme-block:last-child {
-            border-top-right-radius: 50px;
-            border-bottom-right-radius: 50px;
-        }
-
-        /* Bloque/línea indicador verde inferior */
-        .theme-block.selected::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 20%;
-            width: 60%;
-            height: 3px;
-            background-color: var(--verde-fosforito);
-            border-radius: 10px;
-        }
-
-        /* MENSAJES */
-        .chat-messages {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            width: 100%;
-        }
-
-        .message {
-            padding: 12px 16px;
-            border-radius: 12px;
-            max-width: 85%;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            white-space: pre-wrap;
-            line-height: 1.4;
-            font-size: 15px;
-        }
-
-        .user-message {
-            background-color: var(--verde-fosforito);
-            color: #000000;
-            align-self: flex-end;
-            border-bottom-right-radius: 2px;
-        }
-
-        .ai-message {
-            background-color: var(--ai-msg-bg);
-            color: var(--ai-msg-texto);
-            align-self: flex-start;
+        .ai-message { 
+            background-color: var(--ai-msg-bg); 
+            color: var(--ai-msg-texto); 
+            align-self: flex-start; 
             border: 1px solid var(--borde);
-            border-bottom-left-radius: 2px;
+            border-bottom-left-radius: 2px; 
         }
 
-        .ai-message a { color: var(--verde-fosforito); text-decoration: underline; font-weight: bold; }
-
-        /* CONTENEDOR DE ENTRADA */
-        .chat-input-container {
-            padding: 15px 20px;
-            background-color: var(--bg-cabecera);
-            display: flex;
-            gap: 12px;
-            border-top: 1px solid var(--borde);
-            width: 100%;
-            flex-shrink: 0;
+        .chat-input-container { 
+            padding: 12px 15px; 
+            background-color: var(--bg-cabecera); 
+            display: flex; 
+            gap: 10px; 
+            border-top: 1px solid var(--borde); 
+            width: 100%; 
+            flex-shrink: 0; 
+            align-items: center;
         }
 
-        .chat-input-container input {
-            flex: 1;
-            padding: 14px;
-            border-radius: 8px;
-            border: 1px solid var(--borde);
-            background-color: var(--bg-principal);
-            color: white;
-            font-size: 15px;
-            outline: none;
+        .chat-input-container input { 
+            flex: 1; 
+            padding: 12px 16px; 
+            border-radius: 30px; 
+            border: 1px solid var(--borde); 
+            background-color: var(--bg-principal); 
+            color: var(--texto-principal); 
+            font-size: 15px; 
+            outline: none; 
         }
 
-        .chat-input-container input:focus { border-color: var(--verde-fosforito); }
-
-        .chat-input-container button {
-            background-color: var(--verde-fosforito);
-            color: black;
-            border: none;
-            padding: 0 22px;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 15px;
+        .chat-input-container input:focus { 
+            border-color: var(--verde-fosforito); 
         }
 
-        .chat-input-container input:disabled, .chat-input-container button:disabled { opacity: 0.3; cursor: not-allowed; }
-
-        /* BARRA LATERAL DERECHA (PC) */
-        .sidebar-right {
-            width: 290px;
-            background-color: var(--bg-principal);
-            border-left: 1px solid var(--borde);
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            flex-shrink: 0;
+        .chat-input-container button { 
+            background-color: var(--verde-fosforito); 
+            color: black; 
+            border: none; 
+            padding: 12px 22px; 
+            border-radius: 12px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            font-size: 15px; 
         }
 
-        .sidebar-header { padding: 15px; border-bottom: 1px solid var(--borde); }
+        .chat-input-container input:disabled, .chat-input-container button:disabled { 
+            opacity: 0.4; 
+            cursor: not-allowed; 
+        }
 
-        .btn-nuevo-chat {
-            width: 100%; padding: 12px; background-color: transparent;
-            color: var(--verde-fosforito); border: 1px dashed var(--verde-fosforito);
-            border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; text-align: center;
+        .sidebar-right { 
+            width: 290px; 
+            background-color: var(--bg-principal); 
+            border-left: 1px solid var(--borde); 
+            display: flex; 
+            flex-direction: column; 
+            height: 100%; 
+            flex-shrink: 0; 
+        }
+
+        .sidebar-header { padding: 12px; border-bottom: 1px solid var(--borde); }
+
+        .btn-nuevo-chat { 
+            width: 100%; padding: 10px; background-color: transparent; 
+            color: var(--verde-fosforito); border: 1px dashed var(--verde-fosforito); 
+            border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; text-align: center; 
         }
 
         .btn-nuevo-chat:disabled { opacity: 0.2; cursor: not-allowed; }
 
         .chats-list { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
 
-        .chat-item {
-            padding: 12px; background-color: var(--bg-item); border-radius: 6px;
-            cursor: pointer; font-size: 14px; border: 1px solid #2d2d2d;
-            display: flex; justify-content: space-between; align-items: center; gap: 10px; transition: all 0.2s;
+        .chat-item { 
+            padding: 12px; background-color: var(--bg-cabecera); border-radius: 8px; 
+            cursor: pointer; font-size: 14px; border: 1px solid var(--borde); 
+            display: flex; justify-content: space-between; align-items: center; gap: 10px; 
         }
 
-        .chat-item:hover, .chat-item.active { background-color: var(--bg-item-hover); border-color: var(--verde-fosforito); }
+        .chat-item:hover, .chat-item.active { background-color: var(--bg-bloque-gris-hover); border-color: var(--verde-fosforito); }
 
         .chat-item-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
 
         .btn-delete-chat { background: none; border: none; color: #888; cursor: pointer; font-size: 14px; }
         .btn-delete-chat:hover { color: #ff3333; }
 
-        /* MODALES Y PANTALLAS FLOTANTES */
-        .modal-screen {
-            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: var(--bg-modal-overlay); z-index: 999; padding: 15px;
-            flex-direction: column; align-items: center; justify-content: center;
+        .modal-screen { 
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background-color: rgba(11, 11, 13, 0.96); z-index: 999; padding: 15px; 
+            flex-direction: column; align-items: center; justify-content: center; 
         }
 
-        .account-card {
-            background-color: var(--bg-tarjeta); border: 1px solid var(--borde);
-            border-radius: 12px; width: 100%; max-width: 420px; padding: 25px;
-            display: flex; flex-direction: column; gap: 15px;
+        .account-card { 
+            background-color: var(--bg-cabecera); border: 1px solid var(--borde); 
+            border-radius: 16px; width: 100%; max-width: 420px; padding: 25px; 
+            display: flex; flex-direction: column; gap: 15px; color: var(--texto-principal);
         }
 
-        .login-box-inside { background: #121212; padding: 15px; border-radius: 8px; border: 1px solid var(--borde); }
-        .login-box-inside label { font-size: 13px; color: #bbb; display: block; margin-top: 6px; }
-        .login-box-inside input {
-            width: 100%; padding: 10px; margin: 5px 0 10px 0; background: #1a1a1a;
-            border: 1px solid #444; color: white; border-radius: 6px; font-size: 15px; outline: none;
+        .login-box-inside { background: var(--bg-chat); padding: 15px; border-radius: 10px; border: 1px solid var(--borde); }
+        .login-box-inside label { font-size: 13px; color: var(--texto-secundario); display: block; margin-top: 6px; }
+        
+        .login-box-inside input { 
+            width: 100%; padding: 11px; margin: 5px 0 12px 0; background: var(--bg-principal); 
+            border: 1px solid var(--borde); color: var(--texto-principal); border-radius: 8px; font-size: 15px; outline: none; 
         }
-        .login-box-inside input:focus { border-color: var(--verde-fosforito); }
-        .login-box-inside button { width: 100%; padding: 12px; background: var(--verde-fosforito); color: black; border: none; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 15px; }
 
-        .btn-logout-panel { width: 100%; padding: 12px; background-color: #ff3333; color: white; border: none; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 14px; margin-top: 10px; }
-        .btn-volver { align-self: center; background: none; border: 1px solid #444; color: #aaa; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; }
+        .password-container { 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            width: 100%; 
+            margin: 5px 0 12px 0;
+        }
+        .password-container input { 
+            flex: 1; 
+            margin: 0 !important; 
+        }
+        .btn-toggle-password { 
+            background: var(--bg-principal); 
+            border: 1px solid var(--borde); 
+            color: var(--texto-principal);
+            border-radius: 8px;
+            cursor: pointer; 
+            font-size: 18px; 
+            height: 41px;
+            padding: 0 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-box-inside button.btn-autenticar { width: 100%; padding: 12px; background: var(--verde-fosforito); color: black; border: none; font-weight: bold; border-radius: 8px; cursor: pointer; }
+
+        .btn-logout-panel { width: 100%; padding: 12px; background-color: #ff3333; color: white; border: none; font-weight: bold; border-radius: 8px; cursor: pointer; }
+        .btn-volver { align-self: center; background: none; border: 1px solid var(--borde); color: var(--texto-secundario); padding: 9px 18px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+
+        .settings-group { background-color: var(--bg-chat); padding: 15px; border-radius: 10px; border: 1px solid var(--borde); }
+        
+        .theme-selector-container {
+            display: flex;
+            width: 100%;
+            margin-top: 10px;
+            border-radius: 50px;
+            overflow: hidden;
+            background-color: var(--bg-principal);
+            border: 1px solid var(--borde);
+            padding: 2px;
+        }
+
+        .theme-block {
+            flex: 1;
+            background: transparent;
+            color: var(--texto-secundario);
+            border: none;
+            padding: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .theme-block:hover {
+            color: var(--texto-principal);
+            background-color: var(--bg-bloque-gris-hover);
+        }
+
+        .theme-block.selected {
+            background-color: var(--verde-fosforito) !important;
+            color: #000000 !important;
+            border-radius: 50px;
+        }
 
         .modal-chats-list { width: 100%; max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
 
         @media (max-width: 768px) { .sidebar-right { display: none; } }
 
-        /* ALERTA BORRADO */
-        .modal-alerta-oculto { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.85); z-index: 2000; justify-content: center; align-items: center; padding: 15px; }
-        .alerta-card { background-color: #1e1e1e; border: 1px solid #ff3333; border-radius: 12px; width: 100%; max-width: 380px; padding: 22px; text-align: center; }
-        .alerta-card h3 { color: #ff3333; font-size: 19px; margin-bottom: 8px; }
-        .alerta-card p { color: #ccc; font-size: 14px; margin-bottom: 20px; }
-        .alerta-botones { display: flex; gap: 12px; justify-content: center; }
-        .btn-alerta-cancelar { background-color: #333; color: #fff; border: 1px solid #554; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .btn-alerta-eliminar { background-color: #ff3333; color: #fff; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-
-        .password-container { position: relative; width: 100%; display: block; }
-        .password-container input { padding-right: 40px !important; width: 100%; }
-        .btn-toggle-password { position: absolute !important; right: 12px !important; top: 50% !important; transform: translateY(-50%) !important; background: transparent !important; border: none !important; color: #888 !important; cursor: pointer !important; font-size: 18px !important; padding: 0 !important; z-index: 10 !important; width: auto !important; height: auto !important; }
+        .modal-alerta-oculto { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.85); z-index: 2000; justify-content: center; align-items: center; }
+        .alerta-card { background-color: #16161a; border: 1px solid #ff3333; border-radius: 12px; width: 100%; max-width: 380px; padding: 22px; text-align: center; }
+        .alerta-botones { display: flex; gap: 12px; justify-content: center; margin-top: 15px; }
+        .btn-alerta-cancelar { background-color: #222227; color: #fff; border: 1px solid #2d2d2d; padding: 10px 18px; border-radius: 6px; cursor: pointer; }
+        .btn-alerta-eliminar { background-color: #ff3333; color: #fff; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div id="loading-screen">
         <div class="spinner"></div>
-        <h2 style="color: var(--verde-fosforito); font-size: 18px; font-weight: 500; text-align: center; padding: 0 20px;" id="loading-text">Conectando con GNARTEJ API... Verificando estado</h2>
+        <h2 style="color: var(--verde-fosforito); font-size: 17px; font-weight: 500;" id="loading-text">Conectando con GNARTEJ API...</h2>
     </div>
 
     <div id="account-screen" class="modal-screen">
         <div class="account-card">
             <div id="zona-login-registro">
                 <h2 style="color: var(--verde-fosforito); font-size: 20px; text-align: center; margin-bottom: 5px;">Vincular Cuenta</h2>
-                <p style="color: #aaa; font-size: 13px; text-align: center; margin-bottom: 15px;">Pon tu usuario y clave. Si no existes, nos encargamos de registrarte.</p>
+                <p style="color: var(--texto-secundario); font-size: 13px; text-align: center; margin-bottom: 15px;">Inicia sesión o regístrate automáticamente.</p>
                 <div class="login-box-inside">
                     <label>Usuario:</label>
                     <input type="text" id="username-input" placeholder="Tu usuario...">
                     <label>Contraseña:</label>
                     <div class="password-container">
                         <input type="password" id="password-input" placeholder="Tu contraseña...">
-                        <button type="button" class="btn-toggle-password" onclick="alternarVisibilidadPassword()">🙈</button>
+                        <button type="button" class="btn-toggle-password" id="btn-toggle-emoji" onclick="alternarVisibilidadPassword()">🙈</button>
                     </div>
-                    <button id="btn-login-action" onclick="conectarCuentaNube()">Autenticar Cuenta</button>
+                    <button class="btn-autenticar" onclick="conectarCuentaNube()">Autenticar Cuenta</button>
                 </div>
             </div>
             <div id="zona-logout" style="display: none;" class="zona-usuario-activa">
@@ -635,16 +394,15 @@
     <div id="settings-screen" class="modal-screen">
         <div class="account-card">
             <h2 style="color: var(--verde-fosforito); font-size: 20px; text-align: center; font-weight: 600;">⚙️ Ajustes del Sistema</h2>
-            <p style="color: var(--texto-secundario); font-size: 13px; text-align: center; margin-bottom: 15px;">Personaliza el entorno visual.</p>
             <div class="settings-group">
                 <h4 style="font-size: 14px; margin-bottom: 8px;">Tema de la interfaz:</h4>
                 <div class="theme-selector-container">
                     <button id="btn-theme-oscuro" class="theme-block selected" onclick="definirTemaSistema('oscuro')">Oscuro</button>
-                    <button id="btn-theme-dispositivo" class="theme-block" onclick="definirTemaSistema('dispositivo')">Dispositivo</button>
-                    <button id="btn-theme-claro" class="theme-block" onclick="definirThemeSistema('claro')">Claro</button>
+                    <button id="btn-theme-dispositivo" class="theme-block" onclick="definirTemaSistema('dispositivo')">Fijo</button>
+                    <button id="btn-theme-claro" class="theme-block" onclick="definirTemaSistema('claro')">Claro</button>
                 </div>
             </div>
-            <button class="btn-volver" onclick="cerrarPantallaSettings()" style="margin-top: 15px;">Cerrar Ajustes</button>
+            <button class="btn-volver" onclick="cerrarPantallaSettings()">Cerrar Ajustes</button>
         </div>
     </div>
 
@@ -653,13 +411,15 @@
             <div class="chat-header">
                 <h2>GNARTEJ AI</h2>
                 <div class="capsule-menu">
-                    <button class="capsule-btn active" id="btn-nav-historial" onclick="cambiarSeccionVisual('historial')"><i class="fa-regular fa-comment-dots"></i> Historial</button>
-                    <button class="capsule-btn" id="btn-nav-ajustes" onclick="cambiarSeccionVisual('ajustes')"><i class="fa-solid fa-gear"></i> Ajustes</button>
-                    <button class="capsule-btn" id="status-badge" onclick="abrirPantallaCuenta()"><i class="fa-regular fa-user"></i> Conectar Cuenta</button>
+                    <button class="capsule-btn" id="btn-nav-historial" onclick="abrirPantallaHistorial()"><i class="fa-regular fa-comment-dots"></i> Historial</button>
+                    <button class="capsule-btn" id="btn-nav-ajustes" onclick="abrirPantallaSettings()"><i class="fa-solid fa-gear"></i> Ajustes</button>
+                    <button class="capsule-btn active" id="status-badge" onclick="abrirPantallaCuenta()"><i class="fa-regular fa-user"></i> Vincular</button>
                 </div>
             </div>
             
-            <div class="chat-messages" id="chat-box"></div>
+            <div class="chat-messages" id="chat-box">
+                <div class="message ai-message">Bienvenido. Vincular tu cuenta arriba para empezar a chatear.</div>
+            </div>
             
             <div class="chat-input-container">
                 <input type="text" id="user-input" placeholder="Requiere cuenta activa..." disabled>
@@ -677,102 +437,57 @@
 
     <div id="history-screen" class="modal-screen">
         <div class="account-card" style="max-width: 460px;">
-            <h2 style="color: var(--verde-fosforito); font-size: 20px; text-align: center; font-weight: 600;">📁 Historial de Conversaciones</h2>
-            <button class="btn-nuevo-chat" id="modal-newchat-btn" onclick="crearNuevoChat(); cerrarPantallaHistorial();" style="margin-top: 8px;">+ Crear Nuevo Chat</button>
+            <h2 style="color: var(--verde-fosforito); font-size: 20px; text-align: center;">📂 Historial</h2>
+            <button class="btn-nuevo-chat" id="modal-newchat-btn" onclick="crearNuevoChat(); cerrarPantallaHistorial();">+ Crear Nuevo Chat</button>
             <div class="modal-chats-list" id="lista-chats-modal"></div>
-            <button class="btn-volver" onclick="cerrarPantallaHistorial()">Volver al Chat</button>
+            <button class="btn-volver" onclick="cerrarPantallaHistorial()">Cerrar Ventana</button>
         </div>
     </div>
 
     <div id="modal-confirmacion" class="modal-alerta-oculto">
         <div class="alerta-card">
-            <h3>¿Estás completamente seguro?</h3>
-            <p>Si eliminas esta conversación, se borrará para siempre de la base de datos y no podrás recuperar tus mensajes.</p>
+            <h3 style="color:#ff3333;">¿Eliminar conversación?</h3>
+            <p style="color:#ccc; margin-top:10px;">Esta acción no se puede deshacer de la base de datos.</p>
             <div class="alerta-botones">
                 <button class="btn-alerta-cancelar" id="btn-cancelar-borrar">Cancelar</button>
-                <button class="btn-alerta-eliminar" id="btn-confirmar-borrar">Sí, eliminar</button>
+                <button class="btn-alerta-eliminar" id="btn-confirmar-borrar">Eliminar</button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- CONFIGURACIÓN DE CONEXIÓN A RAILWAY (SEGÚN SERVER 3) ---
         const RAILWAY_BACKEND_URL = "https://gnartej-api-production.up.railway.app";
-        const VERCEL_BACKEND_URL = RAILWAY_BACKEND_URL; // Puente de compatibilidad para tus funciones viejas
-
         let usuarioLogueado = null;
         let listaChatsGlobal = [];
         let idChatActivo = null;
-        let temaActual = 'oscuro';
+        let idChatParaBorrar = null;
 
-        // --- MANEJO DE SECCIONES Y MODALES VISUALES ---
-        function cambiarSeccionVisual(tipo) {
-            document.querySelectorAll('.capsule-btn').forEach(b => b.classList.remove('active'));
-            if(tipo === 'ajustes') {
-                document.getElementById('btn-nav-ajustes').classList.add('active');
-                abrirPantallaSettings();
-            } else {
-                document.getElementById('btn-nav-historial').classList.add('active');
-                abrirPantallaHistorial();
+        // Función para ocultar la pantalla de carga de manera segura
+        function quitarPantallaDeCarga() {
+            const loader = document.getElementById('loading-screen');
+            if(loader) {
+                loader.style.opacity = '0';
+                setTimeout(() => loader.style.display = 'none', 500);
             }
         }
 
-        function definirTemaSistema(tema) {
-            temaActual = tema;
-            document.querySelectorAll('.theme-block').forEach(b => b.classList.remove('selected'));
-            const cuerpo = document.body;
-
-            if(tema === 'claro') {
-                cuerpo.classList.add('light-theme');
-                document.getElementById('btn-theme-claro').classList.add('selected');
-            } else if(tema === 'oscuro') {
-                cuerpo.classList.remove('light-theme');
-                document.getElementById('btn-theme-oscuro').classList.add('selected');
-            } else {
-                document.getElementById('btn-theme-dispositivo').classList.add('selected');
-                if(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-                    cuerpo.classList.add('light-theme');
-                } else {
-                    cuerpo.classList.remove('light-theme');
-                }
-            }
-        }
-
-        function abrirPantallaSettings() { document.getElementById('settings-screen').style.display = 'flex'; }
-        function cerrarPantallaSettings() { 
-            document.getElementById('settings-screen').style.display = 'none'; 
-            document.querySelectorAll('.capsule-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('btn-nav-historial').classList.add('active');
-        }
-        function abrirPantallaCuenta() { document.getElementById('account-screen').style.display = 'flex'; }
-        function cerrarPantallaCuenta() { document.getElementById('account-screen').style.display = 'none'; }
-        function abrirPantallaHistorial() { document.getElementById('history-screen').style.display = 'flex'; }
-        function cerrarPantallaHistorial() { document.getElementById('history-screen').style.display = 'none'; }
-        
-        function alternarVisibilidadPassword() {
-            const input = document.getElementById('password-input');
-            input.type = input.type === 'password' ? 'text' : 'password';
-        }
-
-        // --- VERIFICACIÓN DE SALUD DE LA API NADA MÁS ARRANCAR ---
         window.addEventListener('DOMContentLoaded', async () => {
+            const temaGuardado = localStorage.getItem('gnartej_theme') || 'oscuro';
+            definirTemaSistema(temaGuardado);
+
+            // CORRECCIÓN PROTEGIDA: Si /health falla o no existe, la app no se cuelga
             try {
                 const res = await fetch(`${RAILWAY_BACKEND_URL}/health`);
-                if(res.ok) {
-                    console.log("Conectado con éxito a la API de Railway");
-                }
-            } catch (err) {
-                console.error("No se pudo establecer conexión con el backend de Railway.");
+                if(res.ok) console.log("Conectado con Railway.");
+            } catch(e) {
+                console.log("Servidor en Railway cargando o ruta /health no disponible.");
             } finally {
-                // Esconder pantalla de carga
-                const loader = document.getElementById('loading-screen');
-                if(loader) {
-                    loader.style.opacity = '0';
-                    setTimeout(() => loader.style.display = 'none', 500);
-                }
+                quitarPantallaDeCarga();
             }
 
-            // Auto-login por almacenamiento local
+            // Temporizador de respaldo por si el fetch tarda demasiado
+            setTimeout(quitarPantallaDeCarga, 3000);
+
             const cacheUser = localStorage.getItem('gnartej_user');
             if(cacheUser) {
                 usuarioLogueado = JSON.parse(cacheUser);
@@ -781,43 +496,123 @@
             }
         });
 
-        // --- TUS FUNCIONES NATIVAS DE AUTENTICACIÓN Y CHAT ---
-        function reestructurarInterfazUsuarioConectado() {
-            if(usuarioLogueado) {
-                document.getElementById('status-badge').innerHTML = `<i class="fa-regular fa-user"></i> ${usuarioLogueado.username}`;
-                document.getElementById('user-input').disabled = false;
-                document.getElementById('user-input').placeholder = "Pregúntale algo a GNARTEJ AI...";
-                document.getElementById('send-btn').disabled = false;
-                document.getElementById('sidebar-newchat-btn').disabled = false;
-                document.getElementById('zona-login-registro').style.display = 'none';
-                document.getElementById('zona-logout').style.display = 'block';
-                document.getElementById('menu-user-title').innerText = usuarioLogueado.username;
+        function alternarVisibilidadPassword() {
+            const input = document.getElementById('password-input');
+            const btn = document.getElementById('btn-toggle-emoji');
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.innerText = '👁️';
+            } else {
+                input.type = 'password';
+                btn.innerText = '🙈';
             }
         }
 
+        function abrirPantallaCuenta() { document.getElementById('account-screen').style.display = 'flex'; }
+        function cerrarPantallaCuenta() { document.getElementById('account-screen').style.display = 'none'; }
+        function abrirPantallaHistorial() { document.getElementById('history-screen').style.display = 'flex'; }
+        function cerrarPantallaHistorial() { document.getElementById('history-screen').style.display = 'none'; }
+        function abrirPantallaSettings() { document.getElementById('settings-screen').style.display = 'flex'; }
+        function cerrarPantallaSettings() { document.getElementById('settings-screen').style.display = 'none'; }
+
+        function definirTemaSistema(tema) {
+            document.getElementById('btn-theme-oscuro').classList.remove('selected');
+            document.getElementById('btn-theme-dispositivo').classList.remove('selected');
+            document.getElementById('btn-theme-claro').classList.remove('selected');
+            
+            localStorage.setItem('gnartej_theme', tema);
+
+            if(tema === 'claro') {
+                document.body.classList.add('light-theme');
+                document.getElementById('btn-theme-claro').classList.add('selected');
+            } else if(tema === 'dispositivo') {
+                document.getElementById('btn-theme-dispositivo').classList.add('selected');
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+                    document.body.classList.add('light-theme');
+                } else {
+                    document.body.classList.remove('light-theme');
+                }
+            } else {
+                document.body.classList.remove('light-theme');
+                document.getElementById('btn-theme-oscuro').classList.add('selected');
+            }
+        }
+
+        function reestructurarInterfazUsuarioConectado() {
+            if(!usuarioLogueado) return;
+            
+            const badge = document.getElementById('status-badge');
+            badge.innerHTML = `<i class="fa-regular fa-user"></i> ${usuarioLogueado.username}`;
+
+            document.getElementById('user-input').disabled = false;
+            document.getElementById('user-input').placeholder = "Escribe un mensaje a GNARTEJ...";
+            document.getElementById('send-btn').disabled = false;
+            document.getElementById('sidebar-newchat-btn').disabled = false;
+
+            document.getElementById('zona-login-registro').style.display = 'none';
+            document.getElementById('zona-logout').style.display = 'block';
+            document.getElementById('menu-user-title').innerText = `Cuenta: ${usuarioLogueado.username}`;
+        }
+
         async function conectarCuentaNube() {
-            const username = document.getElementById('username-input').value.trim();
-            const password = document.getElementById('password-input').value.trim();
-            if(!username || !password) return alert("Rellena todos los campos");
+            const u = document.getElementById('username-input').value.trim();
+            const p = document.getElementById('password-input').value.trim();
+            if(!u || !p) return alert("Completa los campos.");
+
+            const btnAutenticar = document.querySelector('.btn-autenticar');
+            btnAutenticar.disabled = true;
+            btnAutenticar.innerText = "Conectando...";
 
             try {
                 const res = await fetch(`${RAILWAY_BACKEND_URL}/api/auth/login`, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ username, password })
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ username: u, password: p })
                 });
 
                 if(res.ok) {
-                    usuarioLogueado = await res.json();
-                    localStorage.setItem('gnartej_user', JSON.stringify(usuarioLogueado));
-                    reestructurarInterfazUsuarioConectado();
-                    cerrarPantallaCuenta();
-                    await recargarHistorialChatsServidor();
+                    const data = await res.json();
+                    if (data && (data.id || data._id)) {
+                        usuarioLogueado = {
+                            id: data.id || data._id,
+                            username: data.username || u
+                        };
+                        localStorage.setItem('gnartej_user', JSON.stringify(usuarioLogueado));
+                        reestructurarInterfazUsuarioConectado();
+                        cerrarPantallaCuenta();
+                        await recargarHistorialChatsServidor();
+                    } else {
+                        alert("El servidor de Railway respondió con un formato inesperado.");
+                    }
                 } else {
-                    alert("Credenciales incorrectas o error en el proceso.");
+                    const resReg = await fetch(`${RAILWAY_BACKEND_URL}/api/auth/register`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: u, password: p })
+                    });
+                    
+                    if (resReg.ok) {
+                        const dataReg = await resReg.json();
+                        usuarioLogueado = {
+                            id: dataReg.id || dataReg._id,
+                            username: dataReg.username || u
+                        };
+                        localStorage.setItem('gnartej_user', JSON.stringify(usuarioLogueado));
+                        reestructurarInterfazUsuarioConectado();
+                        cerrarPantallaCuenta();
+                        await recargarHistorialChatsServidor();
+                    } else {
+                        alert("Error de autenticación. Verifica tus datos de acceso en Railway.");
+                    }
                 }
             } catch(e) {
-                alert("Error de conexión con el servidor de Railway.");
+                alert("Error de red con el entorno de producción. Revisa la consola o los registros de Railway.");
+            } finally {
+                btnAutenticar.disabled = false;
+                btnAutenticar.innerText = "Autenticar Cuenta";
             }
         }
 
@@ -827,20 +622,146 @@
         }
 
         async function recargarHistorialChatsServidor() {
-            console.log("Recargando chats del servidor...");
-            // Tu lógica nativa para rellenar `.chats-list` desde la API de Railway iría aquí...
+            if(!usuarioLogueado) return;
+            try {
+                const res = await fetch(`${RAILWAY_BACKEND_URL}/api/chats?usuarioId=${usuarioLogueado.id}`);
+                if(res.ok) {
+                    listaChatsGlobal = await res.json();
+                    actualizarListasDeConversaciones();
+                }
+            } catch(e) { console.error(e); }
         }
 
-        function enviarMensaje() {
-            const inp = document.getElementById('user-input');
-            const txt = inp.value.trim();
-            if(!txt) return;
+        function actualizarListasDeConversaciones() {
+            const containerPC = document.getElementById('lista-chats');
+            const containerMovil = document.getElementById('lista-chats-modal');
+            
+            containerPC.innerHTML = "";
+            containerMovil.innerHTML = "";
 
+            if(listaChatsGlobal.length === 0) {
+                containerPC.innerHTML = `<div style="padding:20px; text-align:center; color:#888;">Crea un nuevo chat para empezar.</div>`;
+                containerMovil.innerHTML = `<p style="color:#aaa; text-align:center; padding:20px;">No hay chats abiertos.</p>`;
+                return;
+            }
+
+            listaChatsGlobal.forEach(c => {
+                const item = document.createElement('div');
+                item.className = `chat-item ${idChatActivo === c._id ? 'active' : ''}`;
+                item.onclick = () => seleccionarConversacionActiva(c._id);
+                item.innerHTML = `
+                    <div class="chat-item-text">${c.titulo || 'Conversación'}</div>
+                    <button class="btn-delete-chat" onclick="abrirAlertaDeBorrado(event, '${c._id}')">✕</button>
+                `;
+                containerPC.appendChild(item);
+
+                const itemM = item.cloneNode(true);
+                itemM.onclick = () => { seleccionarConversacionActiva(c._id); cerrarPantallaHistorial(); };
+                itemM.querySelector('.btn-delete-chat').onclick = (e) => abrirAlertaDeBorrado(e, c._id);
+                containerMovil.appendChild(itemM);
+            });
+        }
+
+        async function crearNuevoChat() {
+            if(!usuarioLogueado) return;
+            try {
+                const res = await fetch(`${RAILWAY_BACKEND_URL}/api/chats`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuarioId: usuarioLogueado.id, titulo: "Nueva conversación" })
+                });
+                if(res.ok) {
+                    const data = await res.json();
+                    idChatActivo = data._id;
+                    await recargarHistorialChatsServidor();
+                    seleccionarConversacionActiva(idChatActivo);
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        async function seleccionarConversacionActiva(id) {
+            idChatActivo = id;
+            actualizarListasDeConversaciones();
             const box = document.getElementById('chat-box');
-            box.innerHTML += `<div class="message user-message">${txt}</div>`;
-            inp.value = "";
+            box.innerHTML = "";
+
+            try {
+                const res = await fetch(`${RAILWAY_BACKEND_URL}/api/chats/${id}`);
+                if(res.ok) {
+                    const chat = await res.json();
+                    if(chat.mensajes && chat.mensajes.length > 0) {
+                        chat.mensajes.forEach(m => {
+                            agregarMensajeAlContenedor(m.rol === 'user' ? 'user' : 'ai', m.contenido);
+                        });
+                    }
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        function agregarMensajeAlContenedor(tipo, texto) {
+            const box = document.getElementById('chat-box');
+            const div = document.createElement('div');
+            div.className = `message ${tipo === 'user' ? 'user-message' : 'ai-message'}`;
+            div.innerText = texto;
+            box.appendChild(div);
             box.scrollTop = box.scrollHeight;
         }
+
+        async function enviarMensaje() {
+            const input = document.getElementById('user-input');
+            const texto = input.value.trim();
+            if(!texto || !usuarioLogueado) return;
+
+            if(!idChatActivo) await crearNuevoChat();
+
+            agregarMensajeAlContenedor('user', texto);
+            input.value = "";
+
+            try {
+                const res = await fetch(`${RAILWAY_BACKEND_URL}/api/chats/${idChatActivo}/mensajes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rol: 'user', contenido: texto })
+                });
+
+                if(res.ok) {
+                    const data = await res.json();
+                    agregarMensajeAlContenedor('ai', data.contenido);
+                    await recargarHistorialChatsServidor();
+                }
+            } catch(e) {
+                agregarMensajeAlContenedor('ai', "Error al procesar la respuesta.");
+            }
+        }
+
+        document.getElementById('user-input').addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') enviarMensaje();
+        });
+
+        function abrirAlertaDeBorrado(e, id) {
+            e.stopPropagation();
+            idChatParaBorrar = id;
+            document.getElementById('modal-confirmacion').style.display = 'flex';
+        }
+
+        document.getElementById('btn-cancelar-borrar').onclick = () => {
+            document.getElementById('modal-confirmacion').style.display = 'none';
+        };
+
+        document.getElementById('btn-confirmar-borrar').onclick = async () => {
+            if(!idChatParaBorrar) return;
+            try {
+                const res = await fetch(`${RAILWAY_BACKEND_URL}/api/chats/${idChatParaBorrar}`, { method: 'DELETE' });
+                if(res.ok) {
+                    if(idChatActivo === idChatParaBorrar) {
+                        idChatActivo = null;
+                        document.getElementById('chat-box').innerHTML = "";
+                    }
+                    document.getElementById('modal-confirmacion').style.display = 'none';
+                    await recargarHistorialChatsServidor();
+                }
+            } catch(e) { alert("Error al eliminar."); }
+        };
     </script>
 </body>
 </html>
