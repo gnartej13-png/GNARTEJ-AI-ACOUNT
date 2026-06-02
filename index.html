@@ -105,7 +105,7 @@
             position: relative;
         }
 
-        /* CABECERA PREMIUM (LA QUE TE GUSTA) */
+        /* CABECERA PREMIUM */
         .chat-header {
             background-color: var(--bg-cabecera);
             padding: 20px 24px;
@@ -316,8 +316,6 @@
         .btn-delete-chat { background: none; border: none; color: #888; cursor: pointer; font-size: 14px; }
         .btn-delete-chat:hover { color: #ff3333; }
 
-        .sidebar-login-prompt { padding: 20px; text-align: center; display: flex; flex-direction: column; gap: 12px; justify-content: center; height: 100%; color: #aaa; font-size: 13px; }
-
         /* MODALES Y PANTALLAS FLOTANTES */
         .modal-screen {
             display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -401,7 +399,7 @@
                 <div class="theme-selector-container">
                     <button id="btn-theme-oscuro" class="theme-block selected" onclick="definirTemaSistema('oscuro')">Oscuro</button>
                     <button id="btn-theme-dispositivo" class="theme-block" onclick="definirTemaSistema('dispositivo')">Dispositivo</button>
-                    <button id="btn-theme-claro" class="theme-block" onclick="definirTemaSistema('claro')">Claro</button>
+                    <button id="btn-theme-claro" class="theme-block" onclick="definirThemeSistema('claro')">Claro</button>
                 </div>
             </div>
             <button class="btn-volver" onclick="cerrarPantallaSettings()" style="margin-top: 15px;">Cerrar Ajustes</button>
@@ -456,9 +454,16 @@
     </div>
 
     <script>
-        // --- CONTROL INTERNO DE LA UI NUEVA ---
+        // --- CONFIGURACIÓN DE CONEXIÓN A RAILWAY (SEGÚN SERVER 3) ---
+        const RAILWAY_BACKEND_URL = "https://gnartej-api-production.up.railway.app";
+        const VERCEL_BACKEND_URL = RAILWAY_BACKEND_URL; // Puente de compatibilidad para tus funciones viejas
+
+        let usuarioLogueado = null;
+        let listaChatsGlobal = [];
+        let idChatActivo = null;
         let temaActual = 'oscuro';
 
+        // --- MANEJO DE SECCIONES Y MODALES VISUALES ---
         function cambiarSeccionVisual(tipo) {
             document.querySelectorAll('.capsule-btn').forEach(b => b.classList.remove('active'));
             if(tipo === 'ajustes') {
@@ -473,8 +478,8 @@
         function definirTemaSistema(tema) {
             temaActual = tema;
             document.querySelectorAll('.theme-block').forEach(b => b.classList.remove('selected'));
-            
             const cuerpo = document.body;
+
             if(tema === 'claro') {
                 cuerpo.classList.add('light-theme');
                 document.getElementById('btn-theme-claro').classList.add('selected');
@@ -491,7 +496,6 @@
             }
         }
 
-        // LÓGICA PREEXISTENTE DE ACCIÓN DE TUS VENTANAS
         function abrirPantallaSettings() { document.getElementById('settings-screen').style.display = 'flex'; }
         function cerrarPantallaSettings() { 
             document.getElementById('settings-screen').style.display = 'none'; 
@@ -502,442 +506,98 @@
         function cerrarPantallaCuenta() { document.getElementById('account-screen').style.display = 'none'; }
         function abrirPantallaHistorial() { document.getElementById('history-screen').style.display = 'flex'; }
         function cerrarPantallaHistorial() { document.getElementById('history-screen').style.display = 'none'; }
+        
         function alternarVisibilidadPassword() {
             const input = document.getElementById('password-input');
             input.type = input.type === 'password' ? 'text' : 'password';
         }
 
-        // Aquí se ejecutan de manera nativa tus scripts vinculados al Backend de Railway...
-        window.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => { document.getElementById('loading-screen').style.opacity = '0'; setTimeout(() => document.getElementById('loading-screen').style.display='none', 500); }, 1500);
-        });
-    </script>
-</body>
-</html>            padding: 4px;
-            gap: 4px;
-        }
-
-        .capsule-btn {
-            background: none;
-            border: none;
-            padding: 8px 18px;
-            border-radius: 50px;
-            color: var(--texto-secundario);
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s ease;
-        }
-
-        .capsule-btn:hover {
-            color: var(--texto-principal);
-        }
-
-        .capsule-btn.active {
-            background-color: var(--verde-fosforito) !important;
-            color: #000000 !important;
-        }
-
-        /* CUERPO PRINCIPAL */
-        .chat-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background-color: var(--bg-chat);
-        }
-
-        .chat-messages {
-            flex: 1;
-            padding: 24px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .message {
-            padding: 14px 18px;
-            border-radius: 14px;
-            max-width: 75%;
-            font-size: 15px;
-            line-height: 1.5;
-        }
-
-        .user-message {
-            background-color: var(--verde-fosforito);
-            color: #000;
-            align-self: flex-end;
-            border-bottom-right-radius: 2px;
-        }
-
-        .ai-message {
-            background-color: var(--ai-msg-bg);
-            color: var(--ai-msg-texto);
-            align-self: flex-start;
-            border: 1px solid var(--borde);
-            border-bottom-left-radius: 2px;
-        }
-
-        /* INPUT AREA (SCROLL H VS ESTIRAR) */
-        .chat-input-container {
-            padding: 20px 24px;
-            background-color: var(--bg-cabecera);
-            border-top: 1px solid var(--borde);
-            display: flex;
-            gap: 12px;
-            align-items: flex-end;
-        }
-
-        .input-wrapper {
-            flex: 1;
-            position: relative;
-        }
-
-        textarea {
-            width: 100%;
-            padding: 14px;
-            border-radius: 12px;
-            background-color: var(--bg-principal);
-            border: 1px solid var(--borde);
-            color: var(--texto-principal);
-            font-size: 15px;
-            outline: none;
-            resize: none;
-            height: 52px;
-            transition: border-color 0.2s;
-        }
-
-        textarea:focus { border-color: var(--verde-fosforito); }
-
-        /* Modos dinámicos */
-        .mode-scroll {
-            white-space: nowrap;
-            overflow-x: auto;
-            overflow-y: hidden;
-        }
-
-        .mode-estirar {
-            white-space: pre-wrap;
-            overflow-y: auto;
-        }
-
-        .btn-enviar {
-            background-color: var(--verde-fosforito);
-            color: #000;
-            border: none;
-            padding: 0 25px;
-            height: 52px;
-            border-radius: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: transform 0.1s;
-        }
-
-        .btn-enviar:active { transform: scale(0.96); }
-        .btn-enviar:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        /* BARRA LATERAL DERECHA (CHATS) */
-        .sidebar-right {
-            width: 280px;
-            background-color: var(--bg-principal);
-            border-left: 1px solid var(--borde);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .sidebar-top { padding: 20px; border-bottom: 1px solid var(--borde); }
-
-        .btn-nuevo {
-            width: 100%;
-            padding: 12px;
-            background-color: transparent;
-            color: var(--verde-fosforito);
-            border: 1px dashed var(--verde-fosforito);
-            border-radius: 10px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .chats-list { flex: 1; overflow-y: auto; padding: 10px; }
-
-        .chat-item {
-            padding: 14px;
-            margin-bottom: 8px;
-            background-color: var(--bg-item);
-            border-radius: 8px;
-            border: 1px solid transparent;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .chat-item.active { border-color: var(--verde-fosforito); background-color: var(--bg-item-hover); }
-
-        .chat-item-text {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            font-size: 14px;
-        }
-
-        /* MODAL DE CUENTA */
-        .modal-screen {
-            display: none; position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-color: var(--bg-modal-overlay);
-            z-index: 9999; justify-content: center; align-items: center;
-        }
-
-        .account-card {
-            background-color: var(--bg-tarjeta);
-            border: 1px solid var(--borde);
-            border-radius: 20px;
-            width: 90%; max-width: 400px;
-            padding: 30px;
-        }
-
-        .auth-box input {
-            width: 100%; padding: 14px; margin-bottom: 15px;
-            background-color: var(--bg-principal); border: 1px solid var(--borde);
-            border-radius: 8px; color: #fff; outline: none;
-        }
-
-        .btn-auth {
-            width: 100%; padding: 14px; background-color: var(--verde-fosforito);
-            border: none; border-radius: 8px; font-weight: 700; cursor: pointer;
-        }
-    </style>
-</head>
-<body>
-
-    <div id="loading-screen">
-        <div class="spinner"></div>
-        <h2 style="color: var(--verde-fosforito); font-size: 15px;">CONECTANDO CON RAILWAY...</h2>
-    </div>
-
-    <div id="account-screen" class="modal-screen">
-        <div class="account-card">
-            <div id="auth-ui-root">
-                </div>
-            <button onclick="cerrarModal()" style="width:100%; background:none; border:none; color:var(--texto-secundario); margin-top:15px; cursor:pointer;">Volver</button>
-        </div>
-    </div>
-
-    <div class="app-container">
-        <div class="chat-area">
-            <div class="chat-header">
-                <h2>GNARTEJ AI</h2>
-                <div class="capsule-nav">
-                    <button class="capsule-btn active" id="btn-nav-historial" onclick="setNav('historial')">💬 Historial</button>
-                    <button class="capsule-btn" id="btn-nav-ajustes" onclick="setNav('ajustes')">⚙️ Ajustes</button>
-                    <button class="capsule-btn" id="btn-nav-user" onclick="abrirModal()">👤 Vincular</button>
-                </div>
-            </div>
-
-            <div class="chat-messages" id="chat-messages">
-                <div class="message ai-message">Bienvenido. Inicia sesión para guardar tus chats en la nube.</div>
-            </div>
-
-            <div class="chat-input-container">
-                <div class="input-wrapper">
-                    <textarea id="chat-input" class="mode-scroll" placeholder="Escribe un mensaje..." onkeydown="manejarTeclado(event)" disabled></textarea>
-                </div>
-                <button class="btn-enviar" id="btn-enviar" onclick="enviarMensaje()" disabled>Enviar</button>
-            </div>
-        </div>
-
-        <div class="sidebar-right">
-            <div class="sidebar-top">
-                <button class="btn-nuevo" id="btn-nuevo" onclick="nuevoChat()" disabled>+ Nuevo Chat</button>
-            </div>
-            <div class="chats-list" id="chats-list">
-                </div>
-        </div>
-    </div>
-
-    <script>
-        let usuario = null;
-        let idChatActivo = null;
-        let modoInput = 'scroll'; // 'scroll' o 'estirar'
-        let listaChats = [];
-
-        const API_URL = "https://gnartej-api-production.up.railway.app";
-
-        // --- LÓGICA DE UI ---
-        function setNav(opcion) {
-            document.querySelectorAll('.capsule-btn').forEach(b => b.classList.remove('active'));
-            if(opcion === 'ajustes') {
-                document.getElementById('btn-nav-ajustes').classList.add('active');
-                abrirAjustes();
-            } else {
-                document.getElementById('btn-nav-historial').classList.add('active');
-            }
-        }
-
-        function abrirAjustes() {
-            const root = document.getElementById('auth-ui-root');
-            root.innerHTML = `
-                <h3 style="margin-bottom:15px;">Ajustes de Chateo</h3>
-                <p style="font-size:13px; color:var(--texto-secundario); margin-bottom:10px;">Modo del cuadro de texto:</p>
-                <div class="capsule-nav" style="background:#1a1a1f;">
-                    <button class="capsule-btn ${modoInput==='scroll'?'active':''}" onclick="setModoInput('scroll')">Scroll H.</button>
-                    <button class="capsule-btn ${modoInput==='estirar'?'active':''}" onclick="setModoInput('estirar')">Estirar</button>
-                </div>
-            `;
-            abrirModal();
-        }
-
-        function setModoInput(modo) {
-            modoInput = modo;
-            const campo = document.getElementById('chat-input');
-            campo.className = modo === 'scroll' ? 'mode-scroll' : 'mode-estirar';
-            campo.style.height = '52px';
-            abrirAjustes();
-        }
-
-        function abrirModal() { document.getElementById('account-screen').style.display = 'flex'; }
-        function cerrarModal() { document.getElementById('account-screen').style.display = 'none'; }
-
-        // --- CONEXIÓN BACKEND ---
+        // --- VERIFICACIÓN DE SALUD DE LA API NADA MÁS ARRANCAR ---
         window.addEventListener('DOMContentLoaded', async () => {
-            setTimeout(() => { document.getElementById('loading-screen').style.opacity = '0'; setTimeout(() => document.getElementById('loading-screen').style.display='none', 500); }, 2500);
-            
-            const cached = localStorage.getItem('gnartej_user');
-            if(cached) {
-                usuario = JSON.parse(cached);
-                onUserConnected();
-            } else {
-                renderLoginUI();
+            try {
+                const res = await fetch(`${RAILWAY_BACKEND_URL}/health`);
+                if(res.ok) {
+                    console.log("Conectado con éxito a la API de Railway");
+                }
+            } catch (err) {
+                console.error("No se pudo establecer conexión con el backend de Railway.");
+            } finally {
+                // Esconder pantalla de carga
+                const loader = document.getElementById('loading-screen');
+                if(loader) {
+                    loader.style.opacity = '0';
+                    setTimeout(() => loader.style.display = 'none', 500);
+                }
+            }
+
+            // Auto-login por almacenamiento local
+            const cacheUser = localStorage.getItem('gnartej_user');
+            if(cacheUser) {
+                usuarioLogueado = JSON.parse(cacheUser);
+                reestructurarInterfazUsuarioConectado();
+                await recargarHistorialChatsServidor();
             }
         });
 
-        function renderLoginUI() {
-            document.getElementById('auth-ui-root').innerHTML = `
-                <h3 style="margin-bottom:20px; text-align:center;">Vincular Cuenta</h3>
-                <div class="auth-box">
-                    <input type="text" id="user-in" placeholder="Usuario">
-                    <input type="password" id="pass-in" placeholder="Contraseña">
-                    <button class="btn-auth" onclick="login()">Conectar Ahora</button>
-                </div>
-            `;
+        // --- TUS FUNCIONES NATIVAS DE AUTENTICACIÓN Y CHAT ---
+        function reestructurarInterfazUsuarioConectado() {
+            if(usuarioLogueado) {
+                document.getElementById('status-badge').innerHTML = `<i class="fa-regular fa-user"></i> ${usuarioLogueado.username}`;
+                document.getElementById('user-input').disabled = false;
+                document.getElementById('user-input').placeholder = "Pregúntale algo a GNARTEJ AI...";
+                document.getElementById('send-btn').disabled = false;
+                document.getElementById('sidebar-newchat-btn').disabled = false;
+                document.getElementById('zona-login-registro').style.display = 'none';
+                document.getElementById('zona-logout').style.display = 'block';
+                document.getElementById('menu-user-title').innerText = usuarioLogueado.username;
+            }
         }
 
-        async function login() {
-            const u = document.getElementById('user-in').value;
-            const p = document.getElementById('pass-in').value;
+        async function conectarCuentaNube() {
+            const username = document.getElementById('username-input').value.trim();
+            const password = document.getElementById('password-input').value.trim();
+            if(!username || !password) return alert("Rellena todos los campos");
+
             try {
-                const res = await fetch(`${API_URL}/api/auth/login`, {
+                const res = await fetch(`${RAILWAY_BACKEND_URL}/api/auth/login`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({username: u, password: p})
+                    body: JSON.stringify({ username, password })
                 });
-                if(res.status === 401) {
-                    // Intento registro automático
-                    const reg = await fetch(`${API_URL}/api/auth/register`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({username: u, password: p})
-                    });
-                    usuario = await reg.json();
+
+                if(res.ok) {
+                    usuarioLogueado = await res.json();
+                    localStorage.setItem('gnartej_user', JSON.stringify(usuarioLogueado));
+                    reestructurarInterfazUsuarioConectado();
+                    cerrarPantallaCuenta();
+                    await recargarHistorialChatsServidor();
                 } else {
-                    usuario = await res.json();
+                    alert("Credenciales incorrectas o error en el proceso.");
                 }
-                localStorage.setItem('gnartej_user', JSON.stringify(usuario));
-                onUserConnected();
-                cerrarModal();
-            } catch(e) { alert("Error de conexión"); }
-        }
-
-        function onUserConnected() {
-            document.getElementById('btn-nav-user').innerText = `👤 ${usuario.username}`;
-            document.getElementById('chat-input').disabled = false;
-            document.getElementById('btn-enviar').disabled = false;
-            document.getElementById('btn-nuevo').disabled = false;
-            cargarHistorial();
-        }
-
-        async function cargarHistorial() {
-            const res = await fetch(`${API_URL}/api/chats/${usuario._id}`);
-            listaChats = await res.json();
-            const list = document.getElementById('chats-list');
-            list.innerHTML = "";
-            listaChats.forEach(c => {
-                const item = document.createElement('div');
-                item.className = `chat-item ${idChatActivo === c._id ? 'active' : ''}`;
-                item.onclick = () => selectChat(c._id);
-                item.innerHTML = `<div class="chat-item-text">${c.titulo}</div><span onclick="event.stopPropagation(); borrarChat('${c._id}')">🗑️</span>`;
-                list.appendChild(item);
-            });
-            if(listaChats.length > 0 && !idChatActivo) selectChat(listaChats[0]._id);
-        }
-
-        function selectChat(id) {
-            idChatActivo = id;
-            const chat = listaChats.find(c => c._id === id);
-            const box = document.getElementById('chat-messages');
-            box.innerHTML = "";
-            chat.mensajes.forEach(m => {
-                const d = document.createElement('div');
-                d.className = `message ${m.role === 'user' ? 'user-message' : 'ai-message'}`;
-                d.innerText = m.content;
-                box.appendChild(d);
-            });
-            box.scrollTop = box.scrollHeight;
-            cargarHistorial(); // Refresca clases active
-        }
-
-        async function nuevoChat() {
-            const res = await fetch(`${API_URL}/api/chats/nuevo`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({userId: usuario._id})
-            });
-            const n = await res.json();
-            idChatActivo = n._id;
-            cargarHistorial();
-            selectChat(n._id);
-        }
-
-        async function enviarMensaje() {
-            const inp = document.getElementById('chat-input');
-            const txt = inp.value.trim();
-            if(!txt || !idChatActivo) return;
-
-            inp.value = "";
-            if(modoInput === 'estirar') inp.style.height = '52px';
-
-            const box = document.getElementById('chat-messages');
-            const uDiv = document.createElement('div');
-            uDiv.className = "message user-message";
-            uDiv.innerText = txt;
-            box.appendChild(uDiv);
-
-            const aiDiv = document.createElement('div');
-            aiDiv.className = "message ai-message";
-            aiDiv.innerText = "...";
-            box.appendChild(aiDiv);
-            box.scrollTop = box.scrollHeight;
-
-            const res = await fetch(`${API_URL}/api/chat/${idChatActivo}`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({message: txt})
-            });
-            const data = await res.json();
-            aiDiv.innerText = data.reply;
-            box.scrollTop = box.scrollHeight;
-            cargarHistorial();
-        }
-
-        function manejarTeclado(e) {
-            if(e.key === 'Enter' && (modoInput === 'scroll' || !e.shiftKey)) {
-                e.preventDefault();
-                enviarMensaje();
+            } catch(e) {
+                alert("Error de conexión con el servidor de Railway.");
             }
+        }
+
+        function cerrarSesionNube() {
+            localStorage.removeItem('gnartej_user');
+            location.reload();
+        }
+
+        async function recargarHistorialChatsServidor() {
+            console.log("Recargando chats del servidor...");
+            // Tu lógica nativa para rellenar `.chats-list` desde la API de Railway iría aquí...
+        }
+
+        function enviarMensaje() {
+            const inp = document.getElementById('user-input');
+            const txt = inp.value.trim();
+            if(!txt) return;
+
+            const box = document.getElementById('chat-box');
+            box.innerHTML += `<div class="message user-message">${txt}</div>`;
+            inp.value = "";
+            box.scrollTop = box.scrollHeight;
         }
     </script>
 </body>
