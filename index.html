@@ -246,7 +246,7 @@
             cursor: not-allowed;
         }
 
-        /* --- BARRA LATERAL DERECHA (CHATS) --- */
+        /* --- BARRA LATERAL (CHATS) --- */
         .sidebar-right {
             width: 300px;
             background-color: var(--bg-principal);
@@ -450,16 +450,16 @@
     <div id="loading-screen">
         <div class="spinner"></div>
         <h2 style="color: #00ff99; font-size: 18px; font-weight: 500; text-align: center; padding: 0 20px;" id="loading-text">
-            Conectando con GNARTEJ API... Verificando estado
+            Conectando con GNARTEJ API en Vercel...
         </h2>
     </div>
 
     <div id="account-screen" class="modal-screen">
         <div class="account-card">
             <div id="zona-login-registro">
-                <h2 style="color: #00ff99; font-size: 20px; text-align: center; margin-bottom: 5px;">Vincular Cuenta</h2>
+                <h2 style="color: #00ff99; font-size: 20px; text-align: center; margin-bottom: 5px;">Vincular Cuenta (Vercel)</h2>
                 <p style="color: #aaa; font-size: 13px; text-align: center; margin-bottom: 15px;">
-                    Pon tu usuario y clave. Si no existes en el servidor, nos encargamos de registrarte de inmediato.
+                    Introduce tus credenciales para conectar.
                 </p>
                 <div class="login-box-inside">
                     <label>Usuario:</label>
@@ -471,7 +471,7 @@
                         <button type="button" class="btn-toggle-password" onclick="alternarVisibilidadPassword()">🙈</button>
                     </div>
                     
-                    <button id="btn-login-action" onclick="conectarCuentaNube()">Autenticar Cuenta</button>
+                    <button id="btn-login-action" onclick="conectarCuentaNube()">Autenticar en Vercel</button>
                 </div>
             </div>
 
@@ -487,7 +487,7 @@
     <div class="app-container">
         <div class="chat-area">
             <div class="chat-header">
-                <h2>GNARTEJ AI</h2>
+                <h2>GNARTEJ AI (Vercel Backend)</h2>
                 <div class="header-buttons-container">
                     <div class="chat-status-badge btn-historial-header" id="btn-historial-top" onclick="abrirPantallaHistorial()" style="display: none;">💬 Historial</div>
                     <div class="chat-status-badge" id="status-badge" onclick="abrirPantallaCuenta()" style="color: #ff3333; border-color: #ff3333;">🔒 Conectar Cuenta</div>
@@ -520,17 +520,16 @@
     </div>
 
     <script>
-        // URL de tu servidor backend en Railway
-        const RENDER_BACKEND_URL = "https://gnartej-api-production.up.railway.app"; 
+        // ¡CAMBIA ESTA URL POR LA DIRECCIÓN QUE TE DÉ VERCEL AL DESPLEGAR TU SERVER!
+        const VERCEL_BACKEND_URL = "https://tu-proyecto-vercel.vercel.app"; 
 
         let usuarioLogueado = null;
         let listaConversaciones = [];
         let chatActivoId = null;
 
-        // Al cargar la ventana, verificamos la conectividad del Backend
         window.onload = async function() {
             try {
-                const response = await fetch(`${RENDER_BACKEND_URL}/health`);
+                const response = await fetch(`${VERCEL_BACKEND_URL}/health`);
                 const data = await response.json();
                 
                 if (data.status === "ok") {
@@ -539,7 +538,6 @@
                         document.getElementById('loading-screen').style.display = 'none';
                     }, 500);
                     
-                    // Restaurar sesión persistente si existiese en LocalStorage
                     const sesionGuardada = localStorage.getItem('usuario_gnartej_ai');
                     if (sesionGuardada) {
                         usuarioLogueado = JSON.parse(sesionGuardada);
@@ -550,19 +548,18 @@
                     marcarErrorCargaBackend();
                 }
             } catch (error) {
-                console.error("Error de conexión inicial:", error);
+                console.error("Error conectando con Vercel:", error);
                 marcarErrorCargaBackend();
             }
         };
 
         function marcarErrorCargaBackend() {
-            document.getElementById('loading-text').innerText = "Servidor desconectado. Asegúrate de que tu backend en Railway esté encendido.";
+            document.getElementById('loading-text').innerText = "Fallo de comunicación con Vercel. Asegúrate de haber configurado las variables de entorno y que la URL sea la correcta.";
             document.getElementById('loading-text').style.color = "#ff3333";
             const spinner = document.querySelector('.spinner');
             if (spinner) spinner.style.borderTopColor = "#ff3333";
         }
 
-        // --- MANEJO DE INTERFAZ MODALES ---
         function abrirPantallaCuenta() { document.getElementById('account-screen').style.display = 'flex'; }
         function cerrarPantallaCuenta() { document.getElementById('account-screen').style.display = 'none'; }
         function abrirPantallaHistorial() { document.getElementById('history-screen').style.display = 'flex'; }
@@ -580,31 +577,29 @@
             }
         }
 
-        // --- CONTROL DE LOGIN / REGISTRO AUTOMÁTICO ---
         async function conectarCuentaNube() {
             const usernameInput = document.getElementById('username-input').value.trim();
             const passwordInput = document.getElementById('password-input').value.trim();
 
             if (!usernameInput || !passwordInput) {
-                alert("Por favor, rellena los campos de usuario y contraseña.");
+                alert("Por favor, rellena los campos.");
                 return;
             }
 
             const btnAction = document.getElementById('btn-login-action');
-            btnAction.innerText = "Autenticando...";
+            btnAction.innerText = "Conectando...";
             btnAction.disabled = true;
 
             try {
-                // Intentamos iniciar sesión
-                let response = await fetch(`${RENDER_BACKEND_URL}/api/auth/login`, {
+                // MUY IMPORTANTE: Se apunta a /api/auth/login para pasar por el middleware Serverless
+                let response = await fetch(`${VERCEL_BACKEND_URL}/api/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username: usernameInput, password: passwordInput })
                 });
 
                 if (response.status === 401) {
-                    // Si falla el login, intentamos registrar de forma transparente
-                    let regResponse = await fetch(`${RENDER_BACKEND_URL}/api/auth/register`, {
+                    let regResponse = await fetch(`${VERCEL_BACKEND_URL}/api/auth/register`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ username: usernameInput, password: passwordInput })
@@ -612,23 +607,23 @@
 
                     if (regResponse.ok) {
                         const nuevoUser = await regResponse.json();
-                        alert("¡Cuenta creada con éxito! Bienvenido al ecosistema GNARTEJ AI.");
+                        alert("¡Cuenta registrada con éxito en Vercel!");
                         guardarYActivarSesion(nuevoUser);
                     } else {
                         const errorData = await regResponse.json();
-                        alert(`Error en el registro: ${errorData.error}`);
+                        alert(`Error: ${errorData.error}`);
                     }
                 } else if (response.ok) {
                     const userLogged = await response.json();
                     guardarYActivarSesion(userLogged);
                 } else {
-                    alert("Error inesperado en los servidores.");
+                    alert("Error devuelto por el servidor.");
                 }
             } catch (err) {
                 console.error(err);
-                alert("Fallo de red al conectar con Railway.");
+                alert("Error crítico de red. Verifica la configuración de CORS de Vercel.");
             } finally {
-                btnAction.innerText = "Autenticar Cuenta";
+                btnAction.innerText = "Autenticar en Vercel";
                 btnAction.disabled = false;
             }
         }
@@ -664,11 +659,10 @@
             location.reload();
         }
 
-        // --- SISTEMA DE GESTIÓN DE CHATS ---
         async function cargarHistorialChatsServidor() {
             if (!usuarioLogueado) return;
             try {
-                const response = await fetch(`${RENDER_BACKEND_URL}/api/chats/${usuarioLogueado._id}`);
+                const response = await fetch(`${VERCEL_BACKEND_URL}/api/chats/${usuarioLogueado._id}`);
                 listaConversaciones = await response.json();
                 renderizarListaChatsLateral();
 
@@ -678,14 +672,14 @@
                     await crearNuevoChat();
                 }
             } catch (error) {
-                console.error("Error cargando historial:", error);
+                console.error("Error cargando historial de chats:", error);
             }
         }
 
         async function crearNuevoChat() {
             if (!usuarioLogueado) return;
             try {
-                const response = await fetch(`${RENDER_BACKEND_URL}/api/chats/nuevo`, {
+                const response = await fetch(`${VERCEL_BACKEND_URL}/api/chats/nuevo`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ userId: usuarioLogueado._id })
@@ -702,7 +696,6 @@
         function renderizarListaChatsLateral() {
             const contenedorLateral = document.getElementById('lista-chats');
             const contenedorModal = document.getElementById('lista-chats-modal');
-            
             let htmlContenido = "";
 
             listaConversaciones.forEach(chat => {
@@ -738,11 +731,11 @@
         }
 
         async function eliminarConversacionChat(event, chatId) {
-            event.stopPropagation(); // Evitamos que se abra al pulsar en borrar
-            if (!confirm("¿Deseas borrar definitivamente esta conversación del servidor?")) return;
+            event.stopPropagation();
+            if (!confirm("¿Deseas eliminar este chat de la base de datos?")) return;
 
             try {
-                const response = await fetch(`${RENDER_BACKEND_URL}/api/chats/${chatId}`, { method: 'DELETE' });
+                const response = await fetch(`${VERCEL_BACKEND_URL}/api/chats/${chatId}`, { method: 'DELETE' });
                 if (response.ok) {
                     listaConversaciones = listaConversaciones.filter(c => c._id !== chatId);
                     renderizarListaChatsLateral();
@@ -760,7 +753,6 @@
             }
         }
 
-        // --- LOGICA DE ENVÍO Y COMUNICACIÓN CON IA ---
         function evaluarTeclado(event) {
             if (event.key === 'Enter') enviarMensaje();
         }
@@ -771,15 +763,12 @@
 
             if (!mensajeTexto || !chatActivoId) return;
 
-            // Inyectar en interfaz de inmediato
             inyectarBurbujaMensaje(mensajeTexto, true);
             inputElement.value = "";
 
-            // Deshabilitar controles provisionalmente
             inputElement.disabled = true;
             document.getElementById('send-btn').disabled = true;
 
-            // Burbuja temporal de carga
             const chatBox = document.getElementById('chat-box');
             const loadBurbuja = document.createElement('div');
             loadBurbuja.className = "message ai-message";
@@ -789,7 +778,7 @@
             chatBox.scrollTop = chatBox.scrollHeight;
 
             try {
-                const response = await fetch(`${RENDER_BACKEND_URL}/api/chat/preguntar`, {
+                const response = await fetch(`${VERCEL_BACKEND_URL}/api/chat/preguntar`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ chatId: chatActivoId, mensajeUsuario: mensajeTexto })
@@ -797,26 +786,24 @@
 
                 const data = await response.json();
                 
-                // Remover burbuja temporal
                 const loader = document.getElementById('loader-ia-msg');
                 if (loader) loader.remove();
 
                 if (response.ok) {
                     inyectarBurbujaMensaje(data.respuesta, false);
                     
-                    // Actualizar el estado local del chat con la respuesta
                     const index = listaConversaciones.findIndex(c => c._id === chatActivoId);
                     if (index !== -1) {
                         listaConversaciones[index] = data.chatActualizado;
                         renderizarListaChatsLateral();
                     }
                 } else {
-                    inyectarBurbujaMensaje(`Error en el servidor: ${data.error}`, false);
+                    inyectarBurbujaMensaje(`Error: ${data.error}`, false);
                 }
             } catch (error) {
                 const loader = document.getElementById('loader-ia-msg');
                 if (loader) loader.remove();
-                inyectarBurbujaMensaje("No se ha podido procesar tu solicitud por un corte de conexión con Railway.", false);
+                inyectarBurbujaMensaje("Error al conectar con Vercel Serverless. La función puede estar tardando más de la cuenta.", false);
             } finally {
                 inputElement.disabled = false;
                 document.getElementById('send-btn').disabled = false;
