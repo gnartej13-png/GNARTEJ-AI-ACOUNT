@@ -246,7 +246,7 @@
             cursor: not-allowed;
         }
 
-        /* --- BARRA LATERAL (CHATS) --- */
+        /* --- BARRA LATERAL DERECHA (CHATS) --- */
         .sidebar-right {
             width: 300px;
             background-color: var(--bg-principal);
@@ -459,7 +459,7 @@
             <div id="zona-login-registro">
                 <h2 style="color: #00ff99; font-size: 20px; text-align: center; margin-bottom: 5px;">Vincular Cuenta (Vercel)</h2>
                 <p style="color: #aaa; font-size: 13px; text-align: center; margin-bottom: 15px;">
-                    Introduce tus credenciales para conectar.
+                    Introduce tus credenciales para conectar. Si no existes, el sistema te registrará automáticamente.
                 </p>
                 <div class="login-box-inside">
                     <label>Usuario:</label>
@@ -487,7 +487,7 @@
     <div class="app-container">
         <div class="chat-area">
             <div class="chat-header">
-                <h2>GNARTEJ AI (Vercel Backend)</h2>
+                <h2>GNARTEJ AI</h2>
                 <div class="header-buttons-container">
                     <div class="chat-status-badge btn-historial-header" id="btn-historial-top" onclick="abrirPantallaHistorial()" style="display: none;">💬 Historial</div>
                     <div class="chat-status-badge" id="status-badge" onclick="abrirPantallaCuenta()" style="color: #ff3333; border-color: #ff3333;">🔒 Conectar Cuenta</div>
@@ -520,7 +520,7 @@
     </div>
 
     <script>
-        // ¡CAMBIA ESTA URL POR LA DIRECCIÓN QUE TE DÉ VERCEL AL DESPLEGAR TU SERVER!
+        // ¡CAMBIA ESTA URL POR LA DE TU PROYECTO REAL DE VERCEL!
         const VERCEL_BACKEND_URL = "https://tu-proyecto-vercel.vercel.app"; 
 
         let usuarioLogueado = null;
@@ -554,7 +554,7 @@
         };
 
         function marcarErrorCargaBackend() {
-            document.getElementById('loading-text').innerText = "Fallo de comunicación con Vercel. Asegúrate de haber configurado las variables de entorno y que la URL sea la correcta.";
+            document.getElementById('loading-text').innerText = "Error de comunicación. Asegúrate de configurar las variables de entorno en Vercel y que la URL sea la correcta.";
             document.getElementById('loading-text').style.color = "#ff3333";
             const spinner = document.querySelector('.spinner');
             if (spinner) spinner.style.borderTopColor = "#ff3333";
@@ -591,7 +591,6 @@
             btnAction.disabled = true;
 
             try {
-                // MUY IMPORTANTE: Se apunta a /api/auth/login para pasar por el middleware Serverless
                 let response = await fetch(`${VERCEL_BACKEND_URL}/api/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -621,7 +620,7 @@
                 }
             } catch (err) {
                 console.error(err);
-                alert("Error crítico de red. Verifica la configuración de CORS de Vercel.");
+                alert("Error de red. Revisa la configuración de enrutamiento o CORS.");
             } finally {
                 btnAction.innerText = "Autenticar en Vercel";
                 btnAction.disabled = false;
@@ -732,7 +731,7 @@
 
         async function eliminarConversacionChat(event, chatId) {
             event.stopPropagation();
-            if (!confirm("¿Deseas eliminar este chat de la base de datos?")) return;
+            if (!confirm("¿Deseas eliminar este chat?")) return;
 
             try {
                 const response = await fetch(`${VERCEL_BACKEND_URL}/api/chats/${chatId}`, { method: 'DELETE' });
@@ -803,7 +802,7 @@
             } catch (error) {
                 const loader = document.getElementById('loader-ia-msg');
                 if (loader) loader.remove();
-                inyectarBurbujaMensaje("Error al conectar con Vercel Serverless. La función puede estar tardando más de la cuenta.", false);
+                inyectarBurbujaMensaje("Error al conectar con Vercel.", false);
             } finally {
                 inputElement.disabled = false;
                 document.getElementById('send-btn').disabled = false;
